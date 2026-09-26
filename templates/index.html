@@ -3,213 +3,304 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dhyan — Local AI Wellness Agent</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,300;9..144,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css">
+  <title>Dhyan — AI Wellness Agent</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>
 
-<div class="privacy-bar" role="status">
-  <span class="pulse-dot"></span>
-  100% Local · Gemma 4 on-device · Zero data leaves this machine
-  <span class="agent-phase-badge" id="agent-phase-badge">IDLE</span>
-</div>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-<main class="app-shell">
-
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-mark">◈</div>
-      <div class="brand-name">Dhyan</div>
+  <!-- Privacy status bar -->
+  <header class="status-bar" role="banner" aria-label="System status">
+    <div class="status-left">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span>100% Local</span>
+      <span class="status-sep" aria-hidden="true">·</span>
+      <span>Gemma 4 on-device</span>
+      <span class="status-sep" aria-hidden="true">·</span>
+      <span>Zero data leaves this machine</span>
     </div>
-
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-val" id="stat-checks">0</div><div class="stat-lbl">Checks</div></div>
-      <div class="stat-card"><div class="stat-val" id="stat-posture">—</div><div class="stat-lbl">Posture</div></div>
-      <div class="stat-card"><div class="stat-val" id="stat-skipped">0</div><div class="stat-lbl">Skipped</div></div>
-      <div class="stat-card"><div class="stat-val" id="stat-session">0m</div><div class="stat-lbl">Session</div></div>
-    </div>
-
-    <div class="trend-section">
-      <div class="section-label">Fatigue Trend</div>
-      <div class="trend-bars">
-        <div class="tbar low" id="tbar-low" style="height:0%"></div>
-        <div class="tbar med" id="tbar-med" style="height:0%"></div>
-        <div class="tbar high" id="tbar-high" style="height:0%"></div>
-      </div>
-      <div class="trend-labels"><span>Low</span><span>Med</span><span>High</span></div>
-    </div>
-
-    <div class="agent-loop-card">
-      <div class="section-label">Agent Loop</div>
-      <div class="loop-steps">
-        <div class="loop-step" id="loop-sense">◉ Sense</div>
-        <div class="loop-arrow">→</div>
-        <div class="loop-step" id="loop-decide">◉ Decide</div>
-        <div class="loop-arrow">→</div>
-        <div class="loop-step" id="loop-act">◉ Act</div>
-        <div class="loop-arrow">→</div>
-        <div class="loop-step" id="loop-check">◉ Check</div>
+    <div class="status-right">
+      <div class="agent-phase" id="agent-phase" aria-live="polite" aria-label="Agent phase">
+        <span class="phase-dot" aria-hidden="true"></span>
+        <span id="phase-text">IDLE</span>
       </div>
     </div>
+  </header>
 
-    <div class="mobile-card hidden" id="mobile-card">
-      <div class="section-label">Mobile Awareness</div>
-      <div class="mobile-pickups" id="mobile-pickups">0 pickups today</div>
-      <div class="mobile-hint">Tap when you pick up your phone</div>
-      <button class="btn-mobile-pickup" id="btn-mobile-pickup">Picked up phone</button>
-    </div>
+  <div class="app-root" id="main-content">
 
-    <button class="btn-settings" id="btn-settings" aria-label="Open settings">Settings</button>
-    <button class="btn-clear" id="btn-clear">Clear Session</button>
-  </aside>
+    <!-- LEFT PANEL: Camera + Controls -->
+    <aside class="panel-left" aria-label="Camera and controls">
 
-  <section class="camera-section">
-    <div class="camera-frame" id="camera-frame">
-      <video id="video" autoplay muted playsinline></video>
-      <canvas id="canvas" style="display:none"></canvas>
-
-      <div class="scan-overlay" id="scan-overlay">
-        <div class="scan-line"></div>
-        <div class="scan-corners">
-          <div class="corner tl"></div>
-          <div class="corner tr"></div>
-          <div class="corner bl"></div>
-          <div class="corner br"></div>
-        </div>
-      </div>
-
-      <div class="presence-badge" id="presence-badge">Awaiting presence...</div>
-      <div class="status-badge" id="status-badge">Idle</div>
-    </div>
-
-    <div class="controls-row">
-      <button class="btn-primary" id="btn-start">Start Agent</button>
-      <button class="btn-secondary" id="btn-check" disabled>Check Now</button>
-      <div class="interval-group">
-        <label for="interval">Every</label>
-        <select id="interval">
-          <option value="30000">30s (demo)</option>
-          <option value="300000">5 min</option>
-          <option value="600000" selected>10 min</option>
-          <option value="900000">15 min</option>
-          <option value="1800000">30 min</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="next-check" id="next-check"></div>
-
-    <div class="posture-reference">
-      <div class="section-label">Posture Reference</div>
-      <div class="posture-guides" id="posture-guides">
-        <div class="posture-guide good">
-          <img src="/static/images/postures/ideal.svg" alt="Ideal posture" width="64" height="64" />
-          <div class="posture-label">Ideal</div>
-        </div>
-        <div class="posture-guide warn">
-          <img src="/static/images/postures/forward.svg" alt="Forward lean" width="64" height="64" />
-          <div class="posture-label">Forward lean</div>
-        </div>
-        <div class="posture-guide bad">
-          <img src="/static/images/postures/slouch.svg" alt="Slouch" width="64" height="64" />
-          <div class="posture-label">Slouch</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="insight-section" aria-live="polite">
-
-    <div class="insight-empty" id="insight-empty">
-      <div class="empty-orb">◈</div>
-      <p>Dhyan is ready.</p>
-      <p class="empty-sub">Start the agent to receive your first wellness insight.<br>Gemma 4 runs entirely on your device.</p>
-    </div>
-
-    <div class="insight-result hidden" id="insight-result">
-      <div class="result-header">
-        <div class="fatigue-chip" id="fatigue-chip"></div>
-        <div class="posture-ring">
-          <svg viewBox="0 0 60 60">
-            <circle class="ring-bg" cx="30" cy="30" r="24"/>
-            <circle class="ring-fill" id="ring-fill" cx="30" cy="30" r="24"
-              stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+      <!-- Brand -->
+      <div class="brand" role="heading" aria-level="1">
+        <span class="brand-mark" aria-hidden="true">◈</span>
+        <span class="brand-name">Dhyan</span>
+        <button class="btn-icon" id="btn-settings" aria-label="Open settings" aria-expanded="false" aria-controls="settings-drawer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
-          <span id="posture-val">—</span>
+        </button>
+      </div>
+
+      <!-- Camera frame -->
+      <div class="camera-wrap">
+        <div class="camera-frame" id="camera-frame" role="img" aria-label="Live webcam feed">
+          <video id="video" autoplay muted playsinline aria-hidden="true"></video>
+          <canvas id="canvas" aria-hidden="true" style="display:none"></canvas>
+
+          <!-- Scan animation -->
+          <div class="scan-overlay" id="scan-overlay" aria-hidden="true">
+            <div class="scan-line"></div>
+            <div class="corner-mark tl"></div>
+            <div class="corner-mark tr"></div>
+            <div class="corner-mark bl"></div>
+            <div class="corner-mark br"></div>
+          </div>
+
+          <!-- Overlaid badges -->
+          <div class="cam-badge presence" id="presence-badge" aria-live="polite"></div>
+          <div class="cam-badge status" id="status-badge">Idle</div>
         </div>
-        <div class="urgency-badge" id="urgency-badge"></div>
-      </div>
 
-      <div class="observations-card" id="observations-card"></div>
+        <!-- Primary action row -->
+        <div class="action-row">
+          <button class="btn-start" id="btn-start" aria-label="Start Dhyan wellness agent">
+            Start Agent
+          </button>
+          <button class="btn-check" id="btn-check" disabled aria-label="Trigger immediate wellness check">
+            Check Now
+          </button>
+        </div>
 
-      <div class="tips-section">
-        <div class="section-label">Wellness Tips</div>
-        <ul class="tips-list" id="tips-list"></ul>
-      </div>
-
-      <div class="break-card" id="break-card">
-        <span class="break-icon">☽</span>
-        <div>
-          <div class="break-label">Break Suggestion</div>
-          <div class="break-text" id="break-text"></div>
+        <!-- Interval + countdown -->
+        <div class="timing-row">
+          <label class="timing-label" for="interval">Check every</label>
+          <select id="interval" class="timing-select" aria-label="Auto-check interval">
+            <option value="30000">30 sec (demo)</option>
+            <option value="300000">5 min</option>
+            <option value="600000" selected>10 min</option>
+            <option value="900000">15 min</option>
+            <option value="1800000">30 min</option>
+          </select>
+          <div class="next-check" id="next-check" aria-live="polite"></div>
         </div>
       </div>
 
-      <div class="affirmation" id="affirmation"></div>
+      <!-- Agent loop visualizer -->
+      <div class="loop-card" aria-label="Agent loop status">
+        <div class="loop-label">Agent Loop</div>
+        <div class="loop-track" role="list">
+          <div class="loop-node" id="loop-sense" role="listitem" aria-label="Sense phase">
+            <div class="loop-dot"></div>
+            <div class="loop-name">Sense</div>
+          </div>
+          <div class="loop-connector" aria-hidden="true"></div>
+          <div class="loop-node" id="loop-decide" role="listitem" aria-label="Decide phase">
+            <div class="loop-dot"></div>
+            <div class="loop-name">Decide</div>
+          </div>
+          <div class="loop-connector" aria-hidden="true"></div>
+          <div class="loop-node" id="loop-act" role="listitem" aria-label="Act phase">
+            <div class="loop-dot"></div>
+            <div class="loop-name">Act</div>
+          </div>
+          <div class="loop-connector" aria-hidden="true"></div>
+          <div class="loop-node" id="loop-check" role="listitem" aria-label="Check phase">
+            <div class="loop-dot"></div>
+            <div class="loop-name">Check</div>
+          </div>
+        </div>
+      </div>
 
-      <button class="btn-acknowledge hidden" id="btn-acknowledge">
-        Got it — I'll take a break
+      <!-- Posture reference -->
+      <div class="posture-card">
+        <div class="posture-label">Posture Guide</div>
+        <div class="posture-row" role="list" aria-label="Posture reference images">
+          <div class="posture-item good" role="listitem" tabindex="0" aria-label="Ideal posture: back straight, monitor at eye level">
+            <img src="/static/images/postures/ideal.png?v=4" alt="Person sitting with ideal posture" width="72" height="72" />
+            <div class="posture-name">Ideal</div>
+          </div>
+          <div class="posture-item warn" role="listitem" tabindex="0" aria-label="Forward lean: monitor too far, leaning in">
+            <img src="/static/images/postures/forward.png?v=4" alt="Person leaning forward toward monitor" width="72" height="72" />
+            <div class="posture-name">Forward lean</div>
+          </div>
+          <div class="posture-item bad" role="listitem" tabindex="0" aria-label="Slouch: rounded shoulders, neck bent">
+            <img src="/static/images/postures/slouch.png?v=4" alt="Person slouching at desk" width="72" height="72" />
+            <div class="posture-name">Slouch</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile awareness (opt-in) -->
+      <div class="mobile-card hidden" id="mobile-card" aria-label="Mobile phone usage tracking">
+        <div class="mobile-header">
+          <div class="posture-label">Phone Pickups</div>
+          <div class="mobile-count" id="mobile-count" aria-live="polite">0</div>
+        </div>
+        <button class="btn-pickup" id="btn-mobile-pickup" aria-label="Log phone pickup">
+          📱 Picked up phone
+        </button>
+      </div>
+
+      <!-- Session footer actions -->
+      <div class="panel-footer">
+        <button class="btn-ghost" id="btn-clear" aria-label="Clear all session data">
+          Clear session
+        </button>
+      </div>
+    </aside>
+
+    <!-- RIGHT PANEL: Stats + Insights -->
+    <main class="panel-right" aria-label="Wellness insights">
+
+      <!-- Stats row at top -->
+      <div class="stats-row" role="region" aria-label="Session statistics">
+        <div class="stat-block">
+          <div class="stat-number" id="stat-checks" aria-label="Total checks">0</div>
+          <div class="stat-desc">Checks</div>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-block">
+          <div class="stat-number" id="stat-posture" aria-label="Average posture score">—</div>
+          <div class="stat-desc">Avg posture</div>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-block">
+          <div class="stat-number" id="stat-skipped" aria-label="Skipped checks">0</div>
+          <div class="stat-desc">Skipped</div>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-block">
+          <div class="stat-number" id="stat-session" aria-label="Session duration">0m</div>
+          <div class="stat-desc">Session</div>
+        </div>
+        <!-- Fatigue trend inline -->
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-block trend-block" aria-label="Fatigue distribution">
+          <div class="trend-bars-inline" aria-hidden="true">
+            <div class="tbar low" id="tbar-low" style="height:4px"></div>
+            <div class="tbar med" id="tbar-med" style="height:4px"></div>
+            <div class="tbar high" id="tbar-high" style="height:4px"></div>
+          </div>
+          <div class="stat-desc">Fatigue trend</div>
+        </div>
+      </div>
+
+      <!-- Insight area -->
+      <div class="insight-area">
+
+        <!-- Empty state -->
+        <div class="empty-state" id="insight-empty" role="status" aria-live="polite">
+          <div class="empty-glyph" aria-hidden="true">◈</div>
+          <h2 class="empty-heading">Ready when you are</h2>
+          <p class="empty-body">Start the agent to receive your first wellness insight. Gemma 4 runs entirely on your device — nothing is sent anywhere.</p>
+        </div>
+
+        <!-- Active insight -->
+        <div class="insight-content hidden" id="insight-result" aria-live="polite" aria-atomic="true">
+
+          <!-- Fatigue + posture header -->
+          <div class="insight-header">
+            <div class="fatigue-pill" id="fatigue-chip" role="status" aria-label="Fatigue level"></div>
+            <div class="posture-meter" aria-label="Posture score">
+              <svg class="posture-ring" viewBox="0 0 56 56" aria-hidden="true">
+                <circle class="ring-track" cx="28" cy="28" r="22"/>
+                <circle class="ring-fill" id="ring-fill" cx="28" cy="28" r="22"
+                  stroke-dasharray="138.2" stroke-dashoffset="138.2"
+                  transform="rotate(-90 28 28)"/>
+              </svg>
+              <span class="posture-number" id="posture-val" aria-label="Posture score out of 10">—</span>
+            </div>
+            <div class="urgency-tag" id="urgency-badge" aria-label="Check urgency"></div>
+            <div class="check-time" id="check-time" aria-label="Time of last check"></div>
+          </div>
+
+          <!-- Observations -->
+          <div class="observations" id="observations" role="region" aria-label="Gemma observations"></div>
+
+          <!-- Wellness tips -->
+          <section class="tips-section" aria-labelledby="tips-heading">
+            <h2 class="section-heading" id="tips-heading">Wellness tips</h2>
+            <ul class="tips-list" id="tips-list" aria-label="Personalized wellness tips"></ul>
+          </section>
+
+          <!-- Break suggestion -->
+          <div class="break-block" id="break-block" role="complementary" aria-label="Break suggestion">
+            <div class="break-icon" aria-hidden="true">☽</div>
+            <div class="break-content">
+              <div class="break-eyebrow">Break suggestion</div>
+              <div class="break-text" id="break-text"></div>
+            </div>
+          </div>
+
+          <!-- Affirmation -->
+          <blockquote class="affirmation" id="affirmation" aria-label="Affirmation"></blockquote>
+
+          <!-- Acknowledge CTA -->
+          <button class="btn-acknowledge hidden" id="btn-acknowledge" aria-label="Acknowledge wellness check and commit to taking a break">
+            Got it — I'll take a break
+          </button>
+        </div>
+
+        <!-- Human handoff state -->
+        <div class="handoff-state hidden" id="handoff-card" role="alert" aria-live="assertive">
+          <div class="handoff-icon" aria-hidden="true">⚠</div>
+          <h2 class="handoff-heading">Agent stepping back</h2>
+          <p class="handoff-body">High fatigue detected three times in a row. Dhyan is pausing automated checks. Please step away from your screen for at least 15 minutes.</p>
+          <button class="btn-resume" id="btn-resume" aria-label="Resume Dhyan after taking a break">
+            I've taken a break — Resume
+          </button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Settings drawer -->
+  <div class="settings-drawer hidden" id="settings-drawer" role="dialog" aria-label="Settings" aria-modal="true">
+    <div class="drawer-header">
+      <span class="drawer-title">Settings</span>
+      <button class="btn-icon" id="btn-close-settings" aria-label="Close settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
       </button>
     </div>
-
-    <div class="handoff-card hidden" id="handoff-card">
-      <div class="handoff-icon">!</div>
-      <div class="handoff-title">Agent stepping back</div>
-      <div class="handoff-body">
-        High fatigue detected 3 times in a row. Dhyan is pausing
-        automated checks. Please take a real break — at least 15 minutes away
-        from your screen.
+    <div class="drawer-body">
+      <div class="setting-group">
+        <label class="setting-label" for="sound-enabled">Sound notifications</label>
+        <input type="checkbox" id="sound-enabled" class="toggle" checked aria-label="Enable sound notifications" role="switch" aria-checked="true" />
       </div>
-      <button class="btn-resume" id="btn-resume">I've taken a break — Resume Agent</button>
-    </div>
-  </section>
-</main>
-
-<div class="settings-drawer hidden" id="settings-drawer">
-  <div class="settings-header">
-    <span>Settings</span>
-    <button class="btn-close-settings" id="btn-close-settings">✕</button>
-  </div>
-  <div class="settings-body">
-    <div class="setting-row">
-      <label>Sound notifications</label>
-      <input type="checkbox" id="sound-enabled" checked>
-    </div>
-    <div class="setting-row">
-      <label>Volume</label>
-      <input type="range" id="sound-volume" min="0" max="1" step="0.1" value="0.6">
-    </div>
-    <div class="setting-row">
-      <label>Speak tips aloud (high fatigue)</label>
-      <input type="checkbox" id="speak-tips">
-    </div>
-    <div class="setting-row">
-      <label>Mobile awareness mode</label>
-      <input type="checkbox" id="mobile-mode">
-    </div>
-    <div class="setting-row">
-      <label>Performance mode (lower CPU)</label>
-      <input type="checkbox" id="perf-mode">
+      <div class="setting-group">
+        <label class="setting-label" for="sound-volume">Volume</label>
+        <input type="range" id="sound-volume" min="0" max="1" step="0.1" value="0.6" aria-label="Notification volume" />
+      </div>
+      <div class="setting-group">
+        <label class="setting-label" for="speak-tips">Speak tips aloud</label>
+        <input type="checkbox" id="speak-tips" class="toggle" aria-label="Read tips aloud on high fatigue" role="switch" aria-checked="false" />
+      </div>
+      <div class="setting-group">
+        <label class="setting-label" for="mobile-mode">Mobile awareness</label>
+        <input type="checkbox" id="mobile-mode" class="toggle" aria-label="Track phone pickups" role="switch" aria-checked="false" />
+      </div>
+      <div class="setting-group">
+        <label class="setting-label" for="perf-mode">Performance mode <span class="setting-hint">lower CPU + battery</span></label>
+        <input type="checkbox" id="perf-mode" class="toggle" aria-label="Enable performance mode for lower CPU and battery use" role="switch" aria-checked="false" />
+      </div>
     </div>
   </div>
-</div>
 
-<div class="toast-container" id="toast-container" aria-live="assertive"></div>
+  <!-- Toast notifications -->
+  <div class="toast-container" id="toast-container" aria-live="assertive" aria-atomic="true" role="status"></div>
 
-<script src="/static/js/sounds.js"></script>
-<script src="/static/js/presence.js"></script>
-<script src="/static/js/agent.js"></script>
-<script src="/static/js/main.js"></script>
+  <script src="/static/js/sounds.js"></script>
+  <script src="/static/js/presence.js"></script>
+  <script src="/static/js/agent.js"></script>
+  <script src="/static/js/main.js"></script>
 </body>
 </html>

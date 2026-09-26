@@ -6,7 +6,8 @@ All tunable values live here. Never scatter magic numbers in other files.
 # LM Studio / Gemma 4
 LMSTUDIO_URL = "http://localhost:1234/v1/chat/completions"
 MODEL_NAME = "google/gemma-4-e4b"
-GEMMA_TIMEOUT_SECONDS = 30
+GEMMA_TIMEOUT_SECONDS = 90          # vision can be slow on e4b — 30s was too tight
+GEMMA_MAX_RETRIES = 2               # retry transient timeouts / busy server
 GEMMA_MAX_TOKENS = 900
 GEMMA_TEMPERATURE = 0.4
 

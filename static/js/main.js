@@ -22,11 +22,15 @@ const insightResult = document.getElementById('insight-result');
 const fatigueChip = document.getElementById('fatigue-chip');
 const ringFill = document.getElementById('ring-fill');
 const postureVal = document.getElementById('posture-val');
-const observationsCard = document.getElementById('observations-card');
+const observationsCard = document.getElementById('observations');
 const tipsList = document.getElementById('tips-list');
 const breakText = document.getElementById('break-text');
 const affirmationEl = document.getElementById('affirmation');
 const urgencyBadge = document.getElementById('urgency-badge');
+const checkTimeEl = document.getElementById('check-time');
+const breakBlock = document.getElementById('break-block');
+const agentPhaseEl = document.getElementById('agent-phase');
+const phaseTextEl = document.getElementById('phase-text');
 
 let stream = null;
 let sessionTimer = null;
@@ -65,10 +69,10 @@ function renderInsight(analysis) {
 
   const level = analysis.fatigue_level || 'low';
   fatigueChip.textContent = level.charAt(0).toUpperCase() + level.slice(1) + ' Fatigue';
-  fatigueChip.className = `fatigue-chip ${level}`;
+  fatigueChip.className = `fatigue-pill ${level}`;
 
   const score = analysis.posture_score || 5;
-  const circ = 150.8;
+  const circ = 138.2;
   ringFill.style.strokeDashoffset = circ - (score / 10) * circ;
   postureVal.textContent = score;
 
@@ -79,6 +83,8 @@ function renderInsight(analysis) {
   breakText.textContent = analysis.break_suggestion || 'Take a 5-minute walk.';
   affirmationEl.textContent = analysis.affirmation || 'You are doing great.';
   urgencyBadge.textContent = analysis.urgency || '';
+  if (checkTimeEl) checkTimeEl.textContent = new Date().toLocaleTimeString();
+  if (breakBlock) breakBlock.classList.toggle('urgent', level === 'high');
 }
 
 async function updateStats() {
@@ -110,8 +116,9 @@ function stopSessionTimer() {
   clearInterval(sessionTimer);
 }
 
-function setStatus(text) {
+function setStatus(text, analyzing = false) {
   statusBadge.textContent = text;
+  statusBadge.classList.toggle('analyzing', !!analyzing);
 }
 
 function showToast(title, body, type = 'success') {
@@ -173,9 +180,11 @@ btnStart.addEventListener('click', async () => {
     syncSettingsFromUI();
     agent.start();
     btnStart.textContent = 'Stop Agent';
-    btnStart.classList.add('stop');
+    btnStart.classList.add('running');
     btnCheck.disabled = false;
-    setStatus('Monitoring');
+    setStatus('Monitoring', false);
+    agentPhaseEl?.classList.add('active');
+    if (phaseTextEl) phaseTextEl.textContent = 'IDLE';
     startSessionTimer();
     statsPollTimer = setInterval(updateStats, 30000);
     showToast('Dhyan Active', 'Wellness agent started.', 'success');
@@ -188,9 +197,11 @@ btnStart.addEventListener('click', async () => {
     stopSessionTimer();
     clearInterval(statsPollTimer);
     btnStart.textContent = 'Start Agent';
-    btnStart.classList.remove('stop');
+    btnStart.classList.remove('running');
     btnCheck.disabled = true;
-    setStatus('Idle');
+    setStatus('Idle', false);
+    agentPhaseEl?.classList.remove('active');
+    if (phaseTextEl) phaseTextEl.textContent = 'IDLE';
   }
 });
 
@@ -217,9 +228,12 @@ btnClear.addEventListener('click', async () => {
 
 btnSettings.addEventListener('click', () => {
   settingsDrawer.classList.toggle('hidden');
+  const isOpen = !settingsDrawer.classList.contains('hidden');
+  btnSettings.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 });
 btnCloseSettings.addEventListener('click', () => {
   settingsDrawer.classList.add('hidden');
+  btnSettings.setAttribute('aria-expanded', 'false');
 });
 
 ['sound-enabled', 'speak-tips', 'mobile-mode', 'perf-mode', 'sound-volume'].forEach(id => {
@@ -241,9 +255,10 @@ btnResume?.addEventListener('click', async () => {
   if (!ok) return;
   window.DhyanAgent.start();
   btnStart.textContent = 'Stop Agent';
-  btnStart.classList.add('stop');
+  btnStart.classList.add('running');
   btnCheck.disabled = false;
-  setStatus('Monitoring');
+  setStatus('Monitoring', false);
+  agentPhaseEl?.classList.add('active');
   showToast('Agent Resumed', 'Welcome back. Monitoring continues.', 'success');
   setTimeout(() => {
     if (window.DhyanAgent.monitoring) window.DhyanAgent.runCycle(video, canvas);
@@ -257,8 +272,7 @@ btnMobilePickup?.addEventListener('click', async () => {
     body: JSON.stringify({ type: 'pickup', enabled: true })
   });
   const data = await res.json();
-  document.getElementById('mobile-pickups').textContent =
-    `${data.events_today} pickups today`;
+  document.getElementById('mobile-count').textContent = data.events_today ?? 0;
 });
 
 window.renderInsight = renderInsight;

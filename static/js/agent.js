@@ -22,8 +22,13 @@ class DhyanAgent {
 
   setPhase(phase) {
     this.phase = phase;
-    const badge = document.getElementById('agent-phase-badge');
-    if (badge) badge.textContent = phase.toUpperCase();
+    const phaseText = document.getElementById('phase-text');
+    if (phaseText) phaseText.textContent = phase.toUpperCase();
+
+    const agentPhase = document.getElementById('agent-phase');
+    if (agentPhase) {
+      agentPhase.classList.toggle('active', this.monitoring && phase !== 'idle');
+    }
 
     const steps = ['sense', 'decide', 'act', 'check'];
     const map = {
@@ -33,9 +38,12 @@ class DhyanAgent {
       checking: 'check',
     };
     const active = map[phase] || null;
-    steps.forEach(step => {
+    const activeIdx = active ? steps.indexOf(active) : -1;
+    steps.forEach((step, idx) => {
       const el = document.getElementById(`loop-${step}`);
-      if (el) el.classList.toggle('active', step === active);
+      if (!el) return;
+      el.classList.toggle('active', step === active);
+      el.classList.toggle('done', activeIdx > idx);
     });
   }
 
@@ -52,7 +60,8 @@ class DhyanAgent {
       presenceBadge.textContent = presenceResult.present
         ? `Present (${presenceResult.reason})`
         : `Absent (${presenceResult.reason})`;
-      presenceBadge.className = `presence-badge ${presenceResult.present ? 'present' : 'absent'}`;
+      presenceBadge.classList.toggle('present', !!presenceResult.present);
+      presenceBadge.classList.toggle('absent', !presenceResult.present);
     }
 
     if (!presenceResult.present) {
@@ -71,6 +80,10 @@ class DhyanAgent {
     const h = this.settings.perfMode ? 240 : 360;
     canvasElement.width = w;
     canvasElement.height = h;
+    // Wait one frame so we don't send an empty/black buffer to Gemma
+    if (videoElement.readyState < 2) {
+      await new Promise((r) => setTimeout(r, 250));
+    }
     ctx.drawImage(videoElement, 0, 0, w, h);
     const imageDataUrl = canvasElement.toDataURL('image/jpeg', 0.65);
 
@@ -104,8 +117,17 @@ class DhyanAgent {
           mobile_active: this.settings.mobileMode
         })
       });
-      const data = await res.json();
-      if (!data.success && !data.offline_recovery) throw new Error(data.error || 'Analysis failed');
+
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (_) {
+        throw new Error(`Server returned ${res.status} (non-JSON). Is Flask still starting?`);
+      }
+
+      if (!data.success && !data.offline_recovery) {
+        throw new Error(data.error || `Analysis failed (${res.status})`);
+      }
       if (data.offline_recovery && !data.analysis) {
         this.setPhase('offline_recovery');
         if (typeof showToast === 'function') {
@@ -122,14 +144,22 @@ class DhyanAgent {
       if (data.offline_recovery) {
         this.setPhase('offline_recovery');
         if (typeof showToast === 'function') {
-          showToast('Offline Recovery', 'Gemma unreachable — using last known state.', 'warning');
+          const reason = data.error || 'Model busy or timed out';
+          showToast(
+            'Using last insight',
+            reason.length > 120 ? reason.slice(0, 120) + '…' : reason,
+            'warning'
+          );
         }
       }
       analysis = data.analysis;
+      if (!analysis) {
+        throw new Error('No analysis payload returned.');
+      }
     } catch (err) {
       this.setPhase('offline_recovery');
       if (typeof showToast === 'function') {
-        showToast('Offline Recovery', err.message || 'Gemma unreachable.', 'warning');
+        showToast('Check failed', err.message || 'Gemma unreachable.', 'warning');
       }
       if (scan) scan.classList.remove('active');
       this.scheduleNext();
@@ -175,7 +205,7 @@ class DhyanAgent {
     const btnStart = document.getElementById('btn-start');
     if (btnStart) {
       btnStart.textContent = 'Start Agent';
-      btnStart.classList.remove('stop');
+      btnStart.classList.remove('running');
     }
     document.getElementById('btn-check')?.setAttribute('disabled', 'true');
   }

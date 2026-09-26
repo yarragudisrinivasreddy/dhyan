@@ -47,11 +47,23 @@ function loadStatus() {
 btnToggle.addEventListener('click', () => {
   if (!isMonitoring) {
     const mins = parseInt(intervalSelect.value, 10);
-    chrome.runtime.sendMessage({ type: 'START_MONITORING', intervalMinutes: mins }, () => {
-      isMonitoring = true;
-      updateUI();
-      startCountdown(mins * 60);
-    });
+    setAnalyzing(true);
+    chrome.runtime.sendMessage(
+      { type: 'START_MONITORING', intervalMinutes: mins },
+      (res) => {
+        setAnalyzing(false);
+        if (chrome.runtime.lastError) {
+          statusText.textContent = chrome.runtime.lastError.message;
+          return;
+        }
+        isMonitoring = true;
+        updateUI();
+        startCountdown(mins * 60);
+        if (!res?.success) {
+          statusText.textContent = res?.error || 'Could not start — open localhost:5000';
+        }
+      }
+    );
   } else {
     chrome.runtime.sendMessage({ type: 'STOP_MONITORING' }, () => {
       isMonitoring = false;
@@ -66,9 +78,17 @@ btnCheck.addEventListener('click', () => {
   setAnalyzing(true);
   chrome.runtime.sendMessage({ type: 'CHECK_NOW' }, (res) => {
     setAnalyzing(false);
+    if (chrome.runtime.lastError) {
+      statusText.textContent = chrome.runtime.lastError.message;
+      return;
+    }
     if (res?.result) {
       renderLastResult(res.result);
       loadStatus();
+    } else if (res?.error) {
+      statusText.textContent = 'Check failed — allow camera on localhost:5000';
+    } else {
+      statusText.textContent = 'No frame — open dashboard, Start Agent, allow camera';
     }
   });
 });

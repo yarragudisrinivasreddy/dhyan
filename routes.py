@@ -45,6 +45,32 @@ def _fatigue_level(value: str) -> FatigueLevel:
         return FatigueLevel.UNKNOWN
 
 
+def _safe_posture(value) -> int:
+    try:
+        return max(1, min(10, int(float(value))))
+    except (TypeError, ValueError):
+        return 5
+
+
+def _offline_payload(exc: Exception, status_without_cache: int = 503):
+    """Shared offline recovery response — prefer last good insight over hard fail."""
+    agent_state.phase = AgentPhase.OFFLINE_RECOVERY
+    agent_state.offline_recoveries += 1
+    cached = get_cached_analysis()
+    if cached:
+        return jsonify({
+            "success": True,
+            "analysis": cached,
+            "offline_recovery": True,
+            "error": str(exc),
+        }), 200
+    return jsonify({
+        "success": False,
+        "error": str(exc),
+        "offline_recovery": True,
+    }), status_without_cache
+
+
 def register_routes(app: Flask) -> None:
 
     @app.route("/")
@@ -71,12 +97,12 @@ def register_routes(app: Flask) -> None:
 
             result = CheckResult(
                 timestamp=datetime.now().isoformat(),
-                fatigue_level=_fatigue_level(analysis.get("fatigue_level", "unknown")),
-                posture_score=int(analysis.get("posture_score", 5)),
-                tips=analysis.get("tips", []),
-                break_suggestion=analysis.get("break_suggestion", ""),
-                affirmation=analysis.get("affirmation", ""),
-                observations=analysis.get("observations", []),
+                fatigue_level=_fatigue_level(str(analysis.get("fatigue_level", "unknown"))),
+                posture_score=_safe_posture(analysis.get("posture_score", 5)),
+                tips=list(analysis.get("tips") or []),
+                break_suggestion=str(analysis.get("break_suggestion") or ""),
+                affirmation=str(analysis.get("affirmation") or ""),
+                observations=list(analysis.get("observations") or []),
                 presence_confirmed=True,
                 gemma_reachable=True,
             )
@@ -102,25 +128,18 @@ def register_routes(app: Flask) -> None:
 
         except GemmaConnectionError as exc:
             logger.error("Gemma connection error: %s", exc)
-            agent_state.phase = AgentPhase.OFFLINE_RECOVERY
-            agent_state.offline_recoveries += 1
-            cached = get_cached_analysis()
-            if cached:
-                return jsonify({
-                    "success": True,
-                    "analysis": cached,
-                    "offline_recovery": True,
-                    "error": str(exc),
-                }), 200
-            return jsonify({"success": False, "error": str(exc), "offline_recovery": True}), 503
+            return _offline_payload(exc, 503)
 
         except GemmaResponseError as exc:
             logger.error("Gemma parse error: %s", exc)
-            return jsonify({"success": False, "error": "Could not parse AI response."}), 500
+            return _offline_payload(exc, 500)
 
         except Exception as exc:
             logger.exception("Unexpected error in /analyze: %s", exc)
-            return jsonify({"success": False, "error": "Internal server error."}), 500
+            return _offline_payload(
+                Exception(f"Analysis failed: {exc}"),
+                500,
+            )
 
     @app.route("/stats", methods=["GET"])
     def stats():

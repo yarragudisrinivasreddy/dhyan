@@ -6,6 +6,7 @@ All inference is local. No external API calls.
 import base64
 import json
 import logging
+import time
 from typing import Optional
 
 import requests
@@ -16,6 +17,7 @@ from config import (
     GEMMA_TIMEOUT_SECONDS,
     GEMMA_MAX_TOKENS,
     GEMMA_TEMPERATURE,
+    GEMMA_MAX_RETRIES,
 )
 from exceptions import GemmaConnectionError, GemmaResponseError
 
@@ -84,6 +86,7 @@ def _normalize_analysis(result: dict) -> dict:
         "agent_recommendation": str(result.get("agent_recommendation") or "continue"),
     }
 
+
 def build_system_prompt(trend: str = "unknown", mobile_active: bool = False) -> str:
     mobile_note = ""
     if mobile_active:
@@ -125,6 +128,55 @@ def get_cached_analysis() -> Optional[dict]:
     return _last_successful
 
 
+def _ensure_jpeg_b64(image_b64: str) -> str:
+    """Strip data-URL prefix and verify JPEG magic bytes."""
+    if "," in image_b64:
+        image_b64 = image_b64.split(",", 1)[1]
+    try:
+        raw = base64.b64decode(image_b64 + "==", validate=False)
+    except Exception as exc:
+        raise GemmaConnectionError(f"Invalid frame encoding: {exc}") from exc
+    if len(raw) < 100 or raw[:2] != b"\xff\xd8":
+        raise GemmaConnectionError("Captured frame is not a valid JPEG — retrying capture.")
+    return image_b64
+
+
+def _post_once(payload: dict) -> dict:
+    try:
+        response = _session.post(
+            LMSTUDIO_URL, json=payload, timeout=GEMMA_TIMEOUT_SECONDS
+        )
+    except requests.exceptions.Timeout as exc:
+        raise GemmaConnectionError(
+            f"Gemma timed out after {GEMMA_TIMEOUT_SECONDS}s — model may be busy."
+        ) from exc
+    except requests.exceptions.ConnectionError as exc:
+        raise GemmaConnectionError(
+            "LM Studio is not running. Start it with Gemma 4 e4b loaded on port 1234."
+        ) from exc
+    except requests.exceptions.RequestException as exc:
+        raise GemmaConnectionError(f"LM Studio request failed: {exc}") from exc
+
+    if response.status_code >= 500:
+        raise GemmaConnectionError(
+            f"LM Studio server error {response.status_code}: {response.text[:200]}"
+        )
+
+    if response.status_code >= 400:
+        detail = response.text[:300]
+        # Transient busy / invalid frame — let caller retry
+        raise GemmaConnectionError(
+            f"LM Studio rejected request ({response.status_code}): {detail}"
+        )
+
+    try:
+        return response.json()
+    except ValueError as exc:
+        raise GemmaConnectionError(
+            f"LM Studio returned non-JSON body: {response.text[:200]}"
+        ) from exc
+
+
 def analyze_frame(
     image_b64: str,
     trend: str = "unknown",
@@ -134,10 +186,12 @@ def analyze_frame(
     Send a base64-encoded webcam frame to Gemma 4 for wellness analysis.
 
     Raises:
-        GemmaConnectionError: If LM Studio is not running.
+        GemmaConnectionError: If LM Studio is not running / times out.
         GemmaResponseError: If the response cannot be parsed.
     """
     global _last_successful
+
+    image_b64 = _ensure_jpeg_b64(image_b64)
 
     payload = {
         "model": MODEL_NAME,
@@ -154,7 +208,10 @@ def analyze_frame(
                     },
                     {
                         "type": "text",
-                        "text": "Please analyze this person's wellness state and return your assessment as JSON."
+                        "text": (
+                            "Analyze this webcam frame. Reply with ONLY the JSON object "
+                            "described in the system prompt — no markdown fences."
+                        ),
                     }
                 ]
             }
@@ -163,33 +220,34 @@ def analyze_frame(
         "max_tokens": GEMMA_MAX_TOKENS,
     }
 
-    try:
-        response = _session.post(LMSTUDIO_URL, json=payload, timeout=GEMMA_TIMEOUT_SECONDS)
-        response.raise_for_status()
-    except requests.exceptions.ConnectionError as exc:
-        logger.error("Cannot connect to LM Studio at %s", LMSTUDIO_URL)
-        raise GemmaConnectionError(
-            "LM Studio is not running. Please start it with Gemma 4 e4b loaded."
-        ) from exc
-    except requests.exceptions.RequestException as exc:
-        logger.error("LM Studio request failed: %s", exc)
-        detail = ""
-        if getattr(exc, "response", None) is not None:
-            try:
-                detail = exc.response.text[:300]
-            except Exception:
-                detail = str(exc.response.status_code)
-        raise GemmaConnectionError(
-            f"LM Studio error: {exc}" + (f" — {detail}" if detail else "")
-        ) from exc
-    raw = response.json()
+    last_err: Optional[Exception] = None
+    for attempt in range(1, GEMMA_MAX_RETRIES + 1):
+        try:
+            raw = _post_once(payload)
+            content = (raw.get("choices") or [{}])[0].get("message", {}).get("content")
+            if not content or not str(content).strip():
+                raise GemmaResponseError("Empty response from Gemma.")
+            result = _normalize_analysis(_extract_json(str(content).strip()))
+            _last_successful = result
+            logger.info(
+                "Gemma analysis complete — fatigue: %s (attempt %d)",
+                result.get("fatigue_level"),
+                attempt,
+            )
+            return result
+        except GemmaResponseError as exc:
+            last_err = exc
+            logger.warning("Gemma parse issue on attempt %d/%d: %s", attempt, GEMMA_MAX_RETRIES, exc)
+            if attempt < GEMMA_MAX_RETRIES:
+                time.sleep(0.6 * attempt)
+                continue
+            raise
+        except GemmaConnectionError as exc:
+            last_err = exc
+            logger.warning("Gemma connection issue on attempt %d/%d: %s", attempt, GEMMA_MAX_RETRIES, exc)
+            if attempt < GEMMA_MAX_RETRIES:
+                time.sleep(0.8 * attempt)
+                continue
+            raise
 
-    try:
-        content = raw["choices"][0]["message"]["content"].strip()
-        result = _normalize_analysis(_extract_json(content))
-        _last_successful = result
-        logger.info("Gemma analysis complete — fatigue: %s", result.get("fatigue_level"))
-        return result
-    except (KeyError, ValueError, IndexError, json.JSONDecodeError) as exc:
-        logger.error("Failed to parse Gemma response: %s", raw)
-        raise GemmaResponseError(f"Could not parse Gemma response: {exc}") from exc
+    raise GemmaConnectionError(str(last_err) if last_err else "Gemma unavailable")

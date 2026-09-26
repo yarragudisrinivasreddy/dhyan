@@ -1,19 +1,20 @@
 {
   "manifest_version": 3,
   "name": "Dhyan — Wellness Agent",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Local AI wellness agent powered by Gemma 4. Detects screen fatigue and reminds you to take breaks. 100% private — no data leaves your machine.",
 
   "permissions": [
     "notifications",
     "alarms",
     "storage",
-    "activeTab",
+    "tabs",
     "scripting"
   ],
 
   "host_permissions": [
-    "http://localhost:5000/*"
+    "http://localhost:5000/*",
+    "http://127.0.0.1:5000/*"
   ],
 
   "background": {
@@ -38,7 +39,10 @@
 
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "http://localhost:5000/*",
+        "http://127.0.0.1:5000/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
