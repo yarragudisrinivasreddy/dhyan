@@ -516,16 +516,67 @@
       background: var(--raised);
     }
     .product-shot {
+      position: relative;
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid var(--border);
       box-shadow: 0 32px 80px rgba(0,0,0,0.6);
-    }
-    .product-shot img {
-      width: 100%;
-      display: block;
+      background: #000;
       aspect-ratio: 16 / 9;
+    }
+    .product-shot img,
+    .product-shot iframe {
+      width: 100%;
+      height: 100%;
+      display: block;
       object-fit: cover;
+      border: 0;
+    }
+    .product-shot iframe {
+      position: absolute;
+      inset: 0;
+    }
+    .video-play {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 7, 6, 0.35);
+      cursor: pointer;
+      border: 0;
+      z-index: 2;
+      transition: background 0.2s;
+    }
+    .video-play:hover,
+    .video-play:focus-visible {
+      background: rgba(5, 7, 6, 0.5);
+      outline: none;
+    }
+    .video-play-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #041208;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+      transition: transform 0.2s;
+    }
+    .video-play:hover .video-play-icon,
+    .video-play:focus-visible .video-play-icon {
+      transform: scale(1.06);
+    }
+    .video-play-icon svg {
+      width: 28px;
+      height: 28px;
+      margin-left: 3px;
+    }
+    .product-shot.is-playing .video-play,
+    .product-shot.is-playing > img {
+      display: none;
     }
     .privacy-copy h2 {
       font-family: var(--font-d);
@@ -788,8 +839,13 @@ your workday.</h1>
       </div>
 
       <div class="screenshot-wrapper">
-        <div class="product-shot glow-once" id="browserMockup">
-          <img src="assets/product.jpg" alt="Laptop on a desk showing Dhyan’s dark wellness dashboard" width="1400" height="788" />
+        <div class="product-shot glow-once" id="demoVideo">
+          <img src="assets/product.jpg" alt="Dhyan demo — click to play video" width="1400" height="788" />
+          <button type="button" class="video-play" id="demoPlayBtn" aria-label="Play Dhyan demo video">
+            <span class="video-play-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </span>
+          </button>
         </div>
 
         <div class="callout callout-1">
@@ -1059,6 +1115,22 @@ your workday.</h1>
           }
         });
       });
+
+      var demoVideo = document.getElementById('demoVideo');
+      var demoPlayBtn = document.getElementById('demoPlayBtn');
+      if (demoVideo && demoPlayBtn) {
+        demoPlayBtn.addEventListener('click', function () {
+          if (demoVideo.classList.contains('is-playing')) return;
+          demoVideo.classList.add('is-playing');
+          var iframe = document.createElement('iframe');
+          iframe.src = 'https://www.youtube.com/embed/1_FHqZeK7Z4?autoplay=1&rel=0';
+          iframe.title = 'Dhyan demo video';
+          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+          iframe.allowFullscreen = true;
+          iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+          demoVideo.appendChild(iframe);
+        });
+      }
 
       if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
         var observer = new IntersectionObserver(function (entries) {
