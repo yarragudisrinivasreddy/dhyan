@@ -292,15 +292,22 @@
         <label class="setting-label" for="perf-mode">Performance mode <span class="setting-hint">lower CPU + battery</span></label>
         <input type="checkbox" id="perf-mode" class="toggle" aria-label="Enable performance mode for lower CPU and battery use" role="switch" aria-checked="false" />
       </div>
+      <div class="setting-group">
+        <label class="setting-label">Demo handoff</label>
+        <button type="button" class="btn-check" id="btn-force-high" style="width:100%;margin-top:8px;">
+          Inject HIGH fatigue (×3 → handoff)
+        </button>
+        <span class="setting-hint">Skip Gemma — use for reliable handoff demo</span>
+      </div>
     </div>
   </div>
 
   <!-- Toast notifications -->
   <div class="toast-container" id="toast-container" aria-live="assertive" aria-atomic="true" role="status"></div>
 
-  <script src="/static/js/sounds.js?v=20260326c"></script>
-  <script src="/static/js/presence.js?v=20260326c"></script>
-  <script src="/static/js/agent.js?v=20260326c"></script>
-  <script src="/static/js/main.js?v=20260326c"></script>
+  <script src="/static/js/sounds.js?v=20260326d"></script>
+  <script src="/static/js/presence.js?v=20260326d"></script>
+  <script src="/static/js/agent.js?v=20260326d"></script>
+  <script src="/static/js/main.js?v=20260326d"></script>
 </body>
 </html>

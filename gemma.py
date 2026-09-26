@@ -106,7 +106,30 @@ Your role in the agent loop:
 - You are in DECIDE phase — analyze and return structured decision
 - The system will handle ACT (notifications, sounds) and CHECK (acknowledgment)
 
-Analyze the image for: posture alignment, eye fatigue, facial tension, shoulder position.
+CRITICAL SCORING RULES — follow exactly. Do NOT default to medium or posture 7.
+
+fatigue_level (pick ONE):
+- "high" if ANY of these are visible: eyes closed or nearly closed, head tilted onto desk/hand, yawning, nodding off, lying back asleep, heavy drooping eyelids, slumped unconscious posture, clearly exhausted face.
+- "medium" if mild tiredness: rubbing eyes, slight forward lean, tense jaw, squinting — but eyes OPEN and upright.
+- "low" only if eyes open, upright, alert, relaxed shoulders.
+
+posture_score (integer 1–10) — use the FULL range; avoid 7 unless truly justified:
+- 1–3: sleeping, head down, extreme slouch, collapsed into chair
+- 4–5: clear forward head / rounded shoulders
+- 6–7: mild lean or mild hunch
+- 8–10: upright, neutral neck, open chest
+
+urgency:
+- "urgent" when fatigue_level is high
+- "elevated" when medium
+- "routine" when low
+
+agent_recommendation:
+- "handoff" when fatigue_level is high
+- "extend_break" when medium
+- "continue" when low
+
+Analyze what you SEE in the image (eyes, head angle, shoulders). Be honest and conservative about wellness — when in doubt toward HIGH if eyes look closed or the person appears asleep.
 
 Return ONLY valid JSON, no markdown, no preamble:
 {{
@@ -209,8 +232,11 @@ def analyze_frame(
                     {
                         "type": "text",
                         "text": (
-                            "Analyze this webcam frame. Reply with ONLY the JSON object "
-                            "described in the system prompt — no markdown fences."
+                            "Look carefully at this webcam frame. Score fatigue and posture "
+                            "using the system rubric. If eyes are closed, head is down, or the "
+                            "person appears asleep/exhausted, you MUST return fatigue_level "
+                            "\"high\", posture_score 1-3, urgency \"urgent\". "
+                            "Do not default to medium or posture 7. Reply with ONLY the JSON object."
                         ),
                     }
                 ]

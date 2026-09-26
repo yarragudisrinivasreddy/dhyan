@@ -9,7 +9,7 @@ MODEL_NAME = "google/gemma-4-e4b"
 GEMMA_TIMEOUT_SECONDS = 90          # vision can be slow on e4b — 30s was too tight
 GEMMA_MAX_RETRIES = 2               # retry transient timeouts / busy server
 GEMMA_MAX_TOKENS = 900
-GEMMA_TEMPERATURE = 0.4
+GEMMA_TEMPERATURE = 0.2
 
 # Agent loop
 AGENT_CHECK_INTERVAL_DEFAULT_MS = 600_000   # 10 minutes

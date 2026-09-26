@@ -264,6 +264,33 @@ btnCloseSettings.addEventListener('click', () => {
   document.getElementById(id).addEventListener('change', syncSettingsFromUI);
 });
 
+document.getElementById('btn-force-high')?.addEventListener('click', async () => {
+  try {
+    const res = await fetch('/demo/force-high', { method: 'POST' });
+    const data = await res.json();
+    if (!data.success || !data.analysis) {
+      showToast('Demo failed', data.error || 'Could not inject HIGH.', 'warning');
+      return;
+    }
+    if (typeof renderInsight === 'function') renderInsight(data.analysis);
+    if (typeof updateStats === 'function') updateStats();
+    if (typeof showWellnessPush === 'function') showWellnessPush(data.analysis);
+    if (window.DhyanSounds?.playForFatigue) {
+      window.DhyanSounds.playForFatigue('high');
+    }
+    const streak = data.consecutive_high_fatigue || 0;
+    showToast('HIGH injected', `${streak}/3 consecutive — ${3 - streak} more to handoff`, 'warning');
+    if (data.handoff || streak >= 3) {
+      window.DhyanAgent?.triggerHandoff?.();
+    } else {
+      window.DhyanAgent?.setPhase?.('checking');
+      document.getElementById('btn-acknowledge')?.classList.remove('hidden');
+    }
+  } catch (err) {
+    showToast('Demo failed', err.message || 'Request error', 'warning');
+  }
+});
+
 btnAcknowledge?.addEventListener('click', async () => {
   await fetch('/agent/acknowledge', { method: 'POST' });
   btnAcknowledge.classList.add('hidden');

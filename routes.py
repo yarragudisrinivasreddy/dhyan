@@ -191,6 +191,58 @@ def register_routes(app: Flask) -> None:
         agent_state.phase = AgentPhase.IDLE
         return jsonify({"success": True, "message": "Agent resumed. Take care of yourself."})
 
+    @app.route("/demo/force-high", methods=["POST"])
+    def demo_force_high():
+        """
+        Hackathon/demo helper: inject one HIGH-fatigue insight (no Gemma call).
+        Call 3× to trigger human handoff.
+        """
+        analysis = {
+            "fatigue_level": "high",
+            "posture_score": 2,
+            "observations": [
+                "Eyes closed or heavy lids — acute fatigue signals.",
+                "Head / shoulder collapse consistent with nodding off.",
+            ],
+            "tips": [
+                "Stand up and leave the screen for 15 minutes.",
+                "Splash cool water on your face and hydrate.",
+                "Do a short walk — no phone until you feel alert.",
+            ],
+            "break_suggestion": "Lie down or walk outdoors for 15 minutes with no screens.",
+            "affirmation": "Rest is part of the work. Your body is asking for a pause.",
+            "urgency": "urgent",
+            "agent_recommendation": "handoff",
+        }
+
+        result = CheckResult(
+            timestamp=datetime.now().isoformat(),
+            fatigue_level=FatigueLevel.HIGH,
+            posture_score=2,
+            tips=list(analysis["tips"]),
+            break_suggestion=analysis["break_suggestion"],
+            affirmation=analysis["affirmation"],
+            observations=list(analysis["observations"]),
+            presence_confirmed=True,
+            gemma_reachable=True,
+        )
+        agent_state.record(result)
+        tracker.record(analysis)
+
+        if agent_state.should_handoff(AGENT_HANDOFF_THRESHOLD):
+            agent_state.handoff_triggered = True
+            agent_state.phase = AgentPhase.HANDOFF
+        else:
+            agent_state.phase = AgentPhase.ACTING
+
+        return jsonify({
+            "success": True,
+            "analysis": analysis,
+            "handoff": agent_state.handoff_triggered,
+            "consecutive_high_fatigue": agent_state.consecutive_high_fatigue,
+            "demo": True,
+        })
+
     @app.route("/presence/validate", methods=["POST"])
     def validate_presence():
         """
