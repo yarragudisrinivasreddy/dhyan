@@ -351,7 +351,7 @@
       display: block;
     }
     @media (prefers-reduced-motion: no-preference) {
-      .browser-mockup.glow-once {
+      .product-shot.glow-once {
         animation: mockGlow 1.6s ease 3s 1;
       }
     }
@@ -442,16 +442,6 @@
     }
 
     /* —— HOW IT WORKS —— */
-    .loop-diagram {
-      max-width: 500px;
-      margin: 0 auto 56px;
-    }
-    .loop-diagram img {
-      width: 100%;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-    }
     .loop-cards {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -468,7 +458,10 @@
     }
     .loop-card.visible { opacity: 1; transform: none; }
     .loop-card .icon {
-      font-size: 22px;
+      font-family: var(--font-m);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--accent);
       margin-bottom: 12px;
     }
     .loop-card h3 {
@@ -501,18 +494,14 @@
     .feature-card.visible { opacity: 1; transform: none; }
     .feature-card:hover { border-color: rgba(62, 207, 110, 0.35); }
     .feature-card .feat-icon {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-    }
-    .feature-card .feat-icon img {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
+      width: auto;
+      height: auto;
+      margin-bottom: 14px;
+      display: block;
+      font-family: var(--font-m);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--accent);
     }
     .feature-card h3 {
       font-size: 20px;
@@ -539,9 +528,27 @@
     }
     .privacy-visual img {
       width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
       border-radius: 16px;
       border: 1px solid var(--border);
       background: var(--raised);
+    }
+    .product-shot {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+    }
+    .product-shot img {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+    }
+    .demo-character img {
+      aspect-ratio: 3 / 2;
+      object-fit: cover;
     }
     .privacy-copy h2 {
       font-family: var(--font-d);
@@ -781,8 +788,8 @@ your workday.</h1>
       </div>
       <div class="hero-visual fade-up d3">
         <img
-          src="https://pikaso.cdnpk.net/private/production/5559319129/3645060698.svg?token=exp=1790812800~hmac=8a3e024a45a24bbbe3216617d343dcf2e5ef131ab6ed21028d80dbf0de1b7db5"
-          alt="Developer at a dark workstation with Dhyan wellness feedback"
+          src="assets/hero.jpg"
+          alt="Developer working at a dark desk with laptop and webcam"
           width="960"
           height="540"
         />
@@ -804,18 +811,8 @@ your workday.</h1>
       </div>
 
       <div class="screenshot-wrapper">
-        <div class="browser-mockup glow-once" id="browserMockup">
-          <div class="browser-chrome">
-            <div class="browser-dots">
-              <span class="dot dot-r"></span>
-              <span class="dot dot-y"></span>
-              <span class="dot dot-g"></span>
-            </div>
-            <div class="browser-url">localhost:5000</div>
-          </div>
-          <div class="browser-body">
-            <img src="assets/app-screenshot.png" alt="Dhyan dashboard showing agent loop, posture guides, fatigue score, and wellness tips" width="1400" height="900" />
-          </div>
+        <div class="product-shot glow-once" id="browserMockup">
+          <img src="assets/product.jpg" alt="Laptop on a desk showing Dhyan’s dark wellness dashboard" width="1400" height="788" />
         </div>
 
         <div class="callout callout-1">
@@ -845,8 +842,8 @@ your workday.</h1>
 
       <div class="demo-character">
         <img
-          src="https://pikaso.cdnpk.net/private/production/5559319724/3645061091.svg?token=exp=1790812800~hmac=788fc598f3e078e386cec176a3470da4f1024f324a29bfaf308194717d3a4189"
-          alt="Professional receiving a Dhyan wellness notification"
+          src="assets/notify.jpg"
+          alt="Professional pausing mid-work for a wellness break"
           width="600"
           height="400"
         />
@@ -861,32 +858,24 @@ your workday.</h1>
       <div class="section-head">
         <h2>The agent loop</h2>
       </div>
-      <div class="loop-diagram">
-        <img
-          src="https://pikaso.cdnpk.net/private/production/5559319084/3645060819.svg?token=exp=1790812800~hmac=ea16c1b1b65ac2b14338ae5922eaedc6d7f7b6d7136f5f4541630495cfbe4740"
-          alt="Sense, Decide, Act, Check circular agent loop"
-          width="500"
-          height="500"
-        />
-      </div>
       <div class="loop-cards" data-reveal>
         <article class="loop-card">
-          <div class="icon">👁</div>
+          <div class="icon">01 · SENSE</div>
           <h3>Sense</h3>
           <p>Webcam captures a frame. Brightness and motion are checked first — dark frames and empty desks are skipped automatically. Only when you're present does analysis begin.</p>
         </article>
         <article class="loop-card">
-          <div class="icon">⬡</div>
+          <div class="icon">02 · DECIDE</div>
           <h3>Decide</h3>
           <p>Gemma 4 e4b running locally on LM Studio analyzes posture, facial tension, and eye fatigue. Your session trend and mobile phone usage are injected as context.</p>
         </article>
         <article class="loop-card">
-          <div class="icon">☽</div>
+          <div class="icon">03 · ACT</div>
           <h3>Act</h3>
           <p>A wellness insight appears in the dashboard. Sound alerts fire based on fatigue level. Chrome notifications appear even when the browser is minimized.</p>
         </article>
         <article class="loop-card">
-          <div class="icon">✓</div>
+          <div class="icon">04 · CHECK</div>
           <h3>Check</h3>
           <p>Dhyan waits for your acknowledgment. After 3 consecutive high-fatigue readings, the agent steps back and hands control to you — the human handoff boundary.</p>
         </article>
@@ -902,39 +891,32 @@ your workday.</h1>
       </div>
       <div class="features-grid" data-reveal>
         <article class="feature-card">
-          <div class="feat-icon">
-            <img
-              src="https://pikaso.cdnpk.net/private/production/5559318977/3645060959.svg?token=exp=1790812800~hmac=86e1be60e9f485cc10aa732018ab309710077f3a644f9f08ce4b7e6c12a1f826"
-              alt=""
-              width="80"
-              height="80"
-            />
-          </div>
+          <div class="feat-icon">01</div>
           <h3>Zero cloud</h3>
           <p>Webcam frames go to localhost only. Gemma 4 runs on your machine. Nothing is logged, stored, or transmitted.</p>
         </article>
         <article class="feature-card">
-          <div class="feat-icon">⚡</div>
+          <div class="feat-icon">02</div>
           <h3>Battery optimized</h3>
           <p>Presence detection at 160×120 before full capture at 480×360. Intelligent skipping cuts wasted compute by ~40%.</p>
         </article>
         <article class="feature-card">
-          <div class="feat-icon">🔔</div>
+          <div class="feat-icon">03</div>
           <h3>OS notifications</h3>
           <p>Chrome Extension fires native system notifications — visible even when your browser is minimized or behind other windows.</p>
         </article>
         <article class="feature-card">
-          <div class="feat-icon">📱</div>
+          <div class="feat-icon">04</div>
           <h3>Mobile awareness</h3>
           <p>Optional phone pickup tracking. Dhyan adds dual-screen fatigue context when you switch between your laptop and phone.</p>
         </article>
         <article class="feature-card">
-          <div class="feat-icon">🪑</div>
+          <div class="feat-icon">05</div>
           <h3>Posture reference</h3>
-          <p>Three illustrated posture guides (ideal, forward lean, slouch) always visible for real-time self-correction.</p>
+          <p>Three posture guides (ideal, forward lean, slouch) stay visible so you can self-correct in real time.</p>
         </article>
         <article class="feature-card">
-          <div class="feat-icon">🤝</div>
+          <div class="feat-icon">06</div>
           <h3>Human handoff</h3>
           <p>After 3 consecutive high-fatigue readings, Dhyan pauses itself and asks you to take a real break. The agent knows its limits.</p>
         </article>
@@ -947,10 +929,10 @@ your workday.</h1>
     <div class="wrap privacy-grid">
       <div class="privacy-visual">
         <img
-          src="https://pikaso.cdnpk.net/private/production/5559318977/3645060959.svg?token=exp=1790812800~hmac=86e1be60e9f485cc10aa732018ab309710077f3a644f9f08ce4b7e6c12a1f826"
-          alt="Privacy shield — hexagonal circuit board motif"
-          width="300"
-          height="300"
+          src="assets/privacy.jpg"
+          alt="Close-up of a laptop webcam — processing stays on your device"
+          width="600"
+          height="600"
         />
       </div>
       <div class="privacy-copy">
@@ -1039,13 +1021,13 @@ your workday.</h1>
         <h2>Built with</h2>
       </div>
       <div class="tech-pills">
-        <span class="tech-pill"><span>◆</span> Gemma 4 (Google DeepMind)</span>
-        <span class="tech-pill"><span>◈</span> LM Studio</span>
-        <span class="tech-pill"><span>⬡</span> Flask</span>
-        <span class="tech-pill"><span>🐍</span> Python</span>
-        <span class="tech-pill"><span>🧩</span> Chrome Extensions API</span>
-        <span class="tech-pill"><span>♪</span> Web Audio API</span>
-        <span class="tech-pill"><span>⚖</span> MIT License</span>
+        <span class="tech-pill">Gemma 4 (Google DeepMind)</span>
+        <span class="tech-pill">LM Studio</span>
+        <span class="tech-pill">Flask</span>
+        <span class="tech-pill">Python</span>
+        <span class="tech-pill">Chrome Extensions API</span>
+        <span class="tech-pill">Web Audio API</span>
+        <span class="tech-pill">MIT License</span>
       </div>
     </div>
   </section>
