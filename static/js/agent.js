@@ -108,6 +108,7 @@ class DhyanAgent {
     if (this.settings.soundEnabled) window.DhyanSounds.checkStarting();
 
     let analysis = null;
+    let fromOfflineRecovery = false;
     try {
       const res = await fetch('/analyze', {
         method: 'POST',
@@ -142,6 +143,7 @@ class DhyanAgent {
         return;
       }
       if (data.offline_recovery) {
+        fromOfflineRecovery = true;
         this.setPhase('offline_recovery');
         // In-dashboard only — never OS push for parse/model failures
         console.warn('[Dhyan] Offline recovery:', data.error || 'model unavailable');
@@ -171,6 +173,11 @@ class DhyanAgent {
     if (typeof renderInsight === 'function') renderInsight(analysis);
     if (typeof updateStats === 'function') updateStats();
 
+    // Demo-friendly OS push on fresh successful checks only
+    if (!fromOfflineRecovery && typeof showWellnessPush === 'function') {
+      showWellnessPush(analysis);
+    }
+
     const ackBtn = document.getElementById('btn-acknowledge');
     if (ackBtn) ackBtn.classList.remove('hidden');
 
@@ -195,6 +202,14 @@ class DhyanAgent {
     if (this.settings.soundEnabled) window.DhyanSounds.handoff();
     if (typeof showToast === 'function') {
       showToast('Agent stepping back', '3x high fatigue. Please take a real break.', 'error');
+    }
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification('Dhyan — Agent stepping back', {
+          body: '3x high fatigue. Please take a real break.',
+          tag: 'dhyan-handoff'
+        });
+      } catch (_) { /* ignore */ }
     }
     const btnStart = document.getElementById('btn-start');
     if (btnStart) {

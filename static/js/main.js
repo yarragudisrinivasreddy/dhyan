@@ -130,14 +130,40 @@ function showToast(title, body, type = 'success') {
   toast.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
   container.appendChild(toast);
 
-  // Never create OS / Chrome push notifications from the dashboard.
-  // Wellness OS alerts come only from the extension for successful checks.
-
   setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transition = 'opacity 0.4s';
     setTimeout(() => toast.remove(), 400);
   }, 5000);
+}
+
+/** OS push for successful wellness insights only — never for errors / offline recovery. */
+async function ensureNotificationPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  try {
+    const result = await Notification.requestPermission();
+    return result === 'granted';
+  } catch (_) {
+    return false;
+  }
+}
+
+function showWellnessPush(analysis) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (!analysis) return;
+
+  const level = analysis.fatigue_level || 'low';
+  const tip = (analysis.tips && analysis.tips[0]) || analysis.break_suggestion || 'Take a short break.';
+  const title = `Dhyan — ${level.charAt(0).toUpperCase() + level.slice(1)} Fatigue · Posture ${analysis.posture_score ?? '—'}/10`;
+  try {
+    new Notification(title, {
+      body: tip,
+      tag: 'dhyan-wellness',
+      renotify: true
+    });
+  } catch (_) { /* ignore */ }
 }
 
 function syncSettingsFromUI() {
@@ -172,6 +198,7 @@ function syncSettingsFromUI() {
 btnStart.addEventListener('click', async () => {
   const agent = window.DhyanAgent;
   if (!agent.monitoring) {
+    await ensureNotificationPermission();
     const ok = await startCamera();
     if (!ok) return;
     syncSettingsFromUI();
@@ -275,3 +302,5 @@ btnMobilePickup?.addEventListener('click', async () => {
 window.renderInsight = renderInsight;
 window.updateStats = updateStats;
 window.showToast = showToast;
+window.showWellnessPush = showWellnessPush;
+window.ensureNotificationPermission = ensureNotificationPermission;
