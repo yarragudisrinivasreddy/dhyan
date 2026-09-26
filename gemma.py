@@ -152,16 +152,51 @@ def get_cached_analysis() -> Optional[dict]:
 
 
 def _ensure_jpeg_b64(image_b64: str) -> str:
-    """Strip data-URL prefix and verify JPEG magic bytes."""
+    """Strip data-URL prefix, clean base64, verify JPEG magic, re-encode for LM Studio.
+
+    Browser canvas JPEGs sometimes fail LM Studio's decoder (`failed to decode, ret = 1`).
+    Re-encoding via Pillow to a baseline RGB JPEG fixes that reliably.
+    """
     if "," in image_b64:
         image_b64 = image_b64.split(",", 1)[1]
+    image_b64 = "".join(image_b64.split())
+
     try:
         raw = base64.b64decode(image_b64 + "==", validate=False)
     except Exception as exc:
         raise GemmaConnectionError(f"Invalid frame encoding: {exc}") from exc
-    if len(raw) < 100 or raw[:2] != b"\xff\xd8":
-        raise GemmaConnectionError("Captured frame is not a valid JPEG — retrying capture.")
-    return image_b64
+    if len(raw) < 100:
+        raise GemmaConnectionError("Captured frame is empty — retry capture.")
+
+    try:
+        from io import BytesIO
+        from PIL import Image
+
+        img = Image.open(BytesIO(raw))
+        img.load()
+        img = img.convert("RGB")
+        w, h = img.size
+        # Even dimensions avoid decoder edge cases
+        w2, h2 = w - (w % 2), h - (h % 2)
+        if w2 >= 2 and h2 >= 2 and (w2, h2) != (w, h):
+            img = img.crop((0, 0, w2, h2))
+        # Keep payload small for local VLM stability
+        max_side = 640
+        if max(img.size) > max_side:
+            img.thumbnail((max_side, max_side), Image.Resampling.LANCZOS)
+        out = BytesIO()
+        img.save(out, format="JPEG", quality=85, optimize=True, progressive=False)
+        return base64.b64encode(out.getvalue()).decode("ascii")
+    except GemmaConnectionError:
+        raise
+    except Exception as exc:
+        # Fall back to original bytes if already a valid JPEG
+        if raw[:2] == b"\xff\xd8":
+            logger.warning("Pillow re-encode skipped (%s); using original JPEG", exc)
+            return base64.b64encode(raw).decode("ascii")
+        raise GemmaConnectionError(
+            f"Captured frame could not be decoded as an image: {exc}"
+        ) from exc
 
 
 def _post_once(payload: dict) -> dict:

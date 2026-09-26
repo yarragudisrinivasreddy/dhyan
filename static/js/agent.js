@@ -85,7 +85,8 @@ class DhyanAgent {
       await new Promise((r) => setTimeout(r, 250));
     }
     ctx.drawImage(videoElement, 0, 0, w, h);
-    const imageDataUrl = canvasElement.toDataURL('image/jpeg', 0.65);
+    // Higher quality + even dims → fewer LM Studio decode failures
+    const imageDataUrl = canvasElement.toDataURL('image/jpeg', 0.85);
 
     const presenceCheck = await fetch('/presence/validate', {
       method: 'POST',
@@ -131,12 +132,18 @@ class DhyanAgent {
       }
       if (data.offline_recovery && !data.analysis) {
         this.setPhase('offline_recovery');
-        if (typeof showToast === 'function') {
-          showToast(
-            'Gemma unavailable',
-            data.error || 'LM Studio unreachable — start Gemma 4 e4b on port 1234.',
-            'warning'
-          );
+        // Throttle error toasts — avoid stacking "Gemma unavailable" every check
+        const now = Date.now();
+        if (!this._lastGemmaErrToast || now - this._lastGemmaErrToast > 45000) {
+          this._lastGemmaErrToast = now;
+          if (typeof showToast === 'function') {
+            const msg = data.error || 'LM Studio unreachable — start Gemma 4 e4b on port 1234.';
+            // Soften raw LM Studio decode noise for the UI
+            const friendly = /failed to decode/i.test(msg)
+              ? 'Camera frame rejected by LM Studio — retrying next check with a cleaner JPEG.'
+              : msg;
+            showToast('Gemma unavailable', friendly, 'warning');
+          }
         }
         if (scan) scan.classList.remove('active');
         this.scheduleNext();
