@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dhyan — Privacy-First AI Wellness Agent · Gemma 4</title>
+  <meta name="description" content="Dhyan watches your posture and fatigue with Gemma 4 running 100% locally. No cloud. No data sent anywhere. Built for Google DeepMind Hackathon 2026.">
+  <meta property="og:title" content="Dhyan — AI Wellness Agent">
+  <meta property="og:description" content="Sense → Decide → Act → Check. Full agent loop. Gemma 4 on-device. MIT licensed.">
+  <meta property="og:url" content="https://yarragudisrinivasreddy.github.io/dhyan">
+  <meta name="theme-color" content="#050706">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050706;
+      --surface: #0c0f0c;
+      --raised: #131713;
+      --border: #1e251e;
+      --text: #f0f5f0;
+      --text-sub: #8fa88f;
+      --text-muted: #4a5c4a;
+      --accent: #3ecf6e;
+      --accent-soft: #0f2a1a;
+      --medium: #f59e0b;
+      --high: #ef4444;
+      --font-d: 'Fraunces', Georgia, serif;
+      --font-b: 'DM Sans', system-ui, sans-serif;
+      --font-m: 'DM Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-b);
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    ul { list-style: none; }
+
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .label {
+      font-family: var(--font-m);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* —— NAV —— */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      transition: background 0.3s, backdrop-filter 0.3s, border-color 0.3s;
+      border-bottom: 1px solid transparent;
+    }
+    .nav.scrolled {
+      background: rgba(5, 7, 6, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom-color: var(--border);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 16px;
+    }
+    .logo {
+      font-family: var(--font-d);
+      font-weight: 600;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .logo-mark { color: var(--accent); }
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .nav-links a {
+      font-size: 14px;
+      color: var(--text-sub);
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-cta { flex-shrink: 0; }
+    .hamburger {
+      display: none;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--text);
+      transition: transform 0.25s, opacity 0.25s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 99;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-family: var(--font-d);
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--text);
+    }
+    .mobile-menu a:hover { color: var(--accent); }
+
+    /* —— BUTTONS —— */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 22px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: var(--accent);
+      color: #041208;
+    }
+    .btn-primary:hover { background: #4adb7e; }
+    .btn-outline {
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: transparent;
+    }
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-sm { padding: 8px 16px; font-size: 13px; }
+
+    /* —— HERO —— */
+    .hero {
+      min-height: calc(100vh - 64px);
+      display: flex;
+      align-items: center;
+      padding: 48px 0 72px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      right: -10%;
+      width: 60%;
+      height: 80%;
+      background: radial-gradient(ellipse, rgba(62, 207, 110, 0.08), transparent 65%);
+      pointer-events: none;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.05fr;
+      gap: 56px;
+      align-items: center;
+      position: relative;
+    }
+    .hero-eyebrow {
+      font-family: var(--font-m);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-family: var(--font-d);
+      font-weight: 600;
+      font-size: 72px;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+      white-space: pre-line;
+    }
+    .hero-body {
+      color: var(--text-sub);
+      max-width: 42ch;
+      margin-bottom: 28px;
+      font-weight: 300;
+    }
+    .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+    .stat-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .stat-pill {
+      font-family: var(--font-m);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-sub);
+      background: var(--surface);
+    }
+
+    .hero-visual { position: relative; }
+    .hero-visual > img {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      background: var(--surface);
+    }
+    .wellness-card {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      max-width: 280px;
+      background: rgba(12, 15, 12, 0.92);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 14px 16px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    }
+    .wellness-card .wc-title {
+      font-family: var(--font-m);
+      font-size: 11px;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .wellness-card p {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+    }
+    .wellness-card .btn { width: 100%; padding: 8px 12px; font-size: 12px; }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .fade-up {
+        animation: fadeUp 0.7s ease forwards;
+      }
+      .fade-up.d1 { animation-delay: 0.1s; }
+      .fade-up.d2 { animation-delay: 0.3s; }
+      .fade-up.d3 { animation-delay: 0.5s; }
+      .fade-up.d4 { animation-delay: 0.7s; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .fade-up { opacity: 1; transform: none; }
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* —— SECTIONS —— */
+    section { padding: 100px 0; }
+    .section-head { text-align: center; margin-bottom: 48px; }
+    .section-head h2 {
+      font-family: var(--font-d);
+      font-weight: 300;
+      font-size: 48px;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .section-head p { color: var(--text-sub); max-width: 48ch; margin: 0 auto; }
+
+    /* —— DEMO —— */
+    .demo {
+      background:
+        radial-gradient(circle, rgba(62,207,110,0.07) 1px, transparent 1px),
+        var(--bg);
+      background-size: 24px 24px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .screenshot-wrapper {
+      position: relative;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .browser-mockup {
+      background: #0c0f0c;
+      border: 1px solid #1e251e;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+    }
+    .browser-chrome {
+      height: 40px;
+      background: #131713;
+      border-bottom: 1px solid #1e251e;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+    }
+    .browser-dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ef4444; }
+    .dot-y { background: #f59e0b; }
+    .dot-g { background: #3ecf6e; }
+    .browser-url {
+      flex: 1;
+      height: 24px;
+      background: #0c0f0c;
+      border: 1px solid #1e251e;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-family: var(--font-m);
+      font-size: 11px;
+      color: #4a5c4a;
+    }
+    .browser-body img {
+      width: 100%;
+      display: block;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .browser-mockup.glow-once {
+        animation: mockGlow 1.6s ease 3s 1;
+      }
+    }
+    @keyframes mockGlow {
+      0%, 100% { box-shadow: 0 32px 80px rgba(0,0,0,0.6); }
+      50% { box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(62,207,110,0.45), 0 0 48px rgba(62,207,110,0.18); }
+    }
+
+    .callout {
+      position: absolute;
+      background: #0c0f0c;
+      border: 1px solid #3ecf6e;
+      border-radius: 10px;
+      padding: 12px 16px;
+      max-width: 190px;
+      font-size: 12px;
+      line-height: 1.5;
+      z-index: 10;
+      color: var(--text-sub);
+    }
+    .callout-title {
+      font-family: var(--font-m);
+      font-size: 10px;
+      color: #3ecf6e;
+      margin-bottom: 4px;
+      letter-spacing: 0.06em;
+    }
+    .callout-1 { top: 12%; left: -210px; }
+    .callout-2 { top: 48%; left: -210px; }
+    .callout-3 { top: 18%; right: -210px; }
+    .callout-4 { top: 55%; right: -210px; }
+
+    .callout-mobile {
+      display: none;
+      margin-top: 28px;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+      counter-reset: callout;
+    }
+    .callout-mobile li {
+      counter-increment: callout;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text-sub);
+    }
+    .callout-mobile li::before {
+      content: counter(callout);
+      font-family: var(--font-m);
+      font-size: 12px;
+      color: var(--accent);
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .callout-mobile strong {
+      display: block;
+      color: var(--text);
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .demo-character {
+      max-width: 420px;
+      margin: 56px auto 0;
+      text-align: center;
+    }
+    .demo-character img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+      background: var(--surface);
+    }
+    .demo-character p {
+      color: var(--text-sub);
+      font-size: 14px;
+      max-width: 36ch;
+      margin: 0 auto;
+    }
+
+    /* —— HOW IT WORKS —— */
+    .loop-diagram {
+      max-width: 500px;
+      margin: 0 auto 56px;
+    }
+    .loop-diagram img {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .loop-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .loop-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 20px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .loop-card.visible { opacity: 1; transform: none; }
+    .loop-card .icon {
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+    .loop-card h3 {
+      font-family: var(--font-b);
+      font-weight: 500;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+    .loop-card p {
+      font-size: 14px;
+      color: var(--text-sub);
+      line-height: 1.65;
+    }
+
+    /* —— FEATURES —— */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.2s;
+    }
+    .feature-card.visible { opacity: 1; transform: none; }
+    .feature-card:hover { border-color: rgba(62, 207, 110, 0.35); }
+    .feature-card .feat-icon {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+    .feature-card .feat-icon img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+    }
+    .feature-card h3 {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-sub);
+      line-height: 1.65;
+    }
+
+    /* —— PRIVACY —— */
+    .privacy {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .privacy-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .privacy-visual img {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--raised);
+    }
+    .privacy-copy h2 {
+      font-family: var(--font-d);
+      font-weight: 300;
+      font-size: 48px;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+      line-height: 1.15;
+    }
+    .privacy-copy p {
+      color: var(--text-sub);
+      margin-bottom: 16px;
+      max-width: 52ch;
+    }
+    .proof-list {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .proof-list li {
+      font-size: 14px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .proof-list li::before {
+      content: '✓';
+      color: var(--accent);
+      font-family: var(--font-m);
+      font-size: 13px;
+    }
+
+    /* —— INSTALL —— */
+    .install-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .install-col {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+    }
+    .install-col h3 {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+    .step {
+      margin-bottom: 16px;
+    }
+    .step-num {
+      font-family: var(--font-m);
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .step p {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+    }
+    .code-block {
+      position: relative;
+      background: #080a08;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 44px 12px 14px;
+      font-family: var(--font-m);
+      font-size: 12px;
+      color: var(--text-sub);
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+    .code-block .cmd { color: var(--accent); }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-family: var(--font-m);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--raised);
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .copy-btn.copied { color: var(--accent); }
+
+    /* —— TECH —— */
+    .tech-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .tech-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 14px;
+      color: var(--text-sub);
+    }
+    .tech-pill span { font-size: 16px; }
+
+    /* —— FOOTER —— */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 48px 0 32px;
+    }
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+    .footer-brand .logo { margin-bottom: 8px; }
+    .footer-brand p { color: var(--text-muted); font-size: 14px; }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      font-size: 14px;
+      color: var(--text-sub);
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--accent); }
+    .footer-meta {
+      text-align: right;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+      text-align: center;
+      font-family: var(--font-m);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    /* —— RESPONSIVE —— */
+    @media (max-width: 1100px) {
+      .callout { display: none; }
+      .callout-mobile { display: block; }
+    }
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+      .hero h1 { font-size: 48px; }
+      .hero { min-height: auto; padding-top: 40px; }
+      .wellness-card { max-width: 240px; bottom: 12px; left: 12px; }
+      .loop-cards { grid-template-columns: 1fr 1fr; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .privacy-grid { grid-template-columns: 1fr; gap: 32px; }
+      .privacy-visual { max-width: 280px; margin: 0 auto; }
+      .privacy-copy h2 { font-size: 36px; text-align: center; }
+      .privacy-copy p { margin-left: auto; margin-right: auto; text-align: center; }
+      .proof-list { align-items: center; }
+      .install-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+      .nav-cta { display: none; }
+      .section-head h2 { font-size: 36px; }
+    }
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 40px; }
+      .section-head h2,
+      .privacy-copy h2 { font-size: 30px; }
+      .loop-cards { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .footer-top { flex-direction: column; }
+      .footer-meta { text-align: left; }
+      .wellness-card { position: relative; bottom: auto; left: auto; max-width: none; margin-top: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- NAV -->
+  <nav class="nav" id="nav">
+    <div class="wrap nav-inner">
+      <a href="#" class="logo"><span class="logo-mark">◈</span> Dhyan</a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How it Works</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#install">Install</a>
+      </div>
+      <a href="#install" class="btn btn-primary btn-sm nav-cta">Get Dhyan</a>
+      <button class="hamburger" id="hamburger" aria-label="Menu" type="button">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features" data-close>Features</a>
+    <a href="#how" data-close>How it Works</a>
+    <a href="#privacy" data-close>Privacy</a>
+    <a href="#install" data-close>Install</a>
+    <a href="#install" class="btn btn-primary" data-close>Get Dhyan</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="hero-eyebrow fade-up d1">◈ Google DeepMind Hackathon · Gemma 4 Local-First</p>
+        <h1 class="fade-up d2">Mindfulness,
+built into
+your workday.</h1>
+        <p class="hero-body fade-up d3">Dhyan watches your posture and fatigue with your webcam, decides with Gemma 4 running locally, and nudges you to take care of yourself — without sending a single pixel to the cloud.</p>
+        <div class="cta-row fade-up d4">
+          <a class="btn btn-primary" href="#install">Install Chrome Extension</a>
+          <a class="btn btn-outline" href="https://github.com/yarragudisrinivasreddy/dhyan" target="_blank" rel="noopener">View on GitHub</a>
+        </div>
+        <div class="stat-pills fade-up d4">
+          <span class="stat-pill">100% Local</span>
+          <span class="stat-pill">Gemma 4 on-device</span>
+          <span class="stat-pill">Open Source MIT</span>
+        </div>
+      </div>
+      <div class="hero-visual fade-up d3">
+        <img
+          src="https://pikaso.cdnpk.net/private/production/5559319129/3645060698.svg?token=exp=1790812800~hmac=8a3e024a45a24bbbe3216617d343dcf2e5ef131ab6ed21028d80dbf0de1b7db5"
+          alt="Developer at a dark workstation with Dhyan wellness feedback"
+          width="960"
+          height="540"
+        />
+        <div class="wellness-card">
+          <div class="wc-title">◈ Low Fatigue · Posture 7/10</div>
+          <p>Perform gentle shoulder rolls every 30 minutes.</p>
+          <button class="btn btn-primary" type="button">Got it — I'll take a break</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO -->
+  <section class="demo" id="demo">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>See Dhyan in action</h2>
+        <p>Running live on Gemma 4 e4b · All processing on your device</p>
+      </div>
+
+      <div class="screenshot-wrapper">
+        <div class="browser-mockup glow-once" id="browserMockup">
+          <div class="browser-chrome">
+            <div class="browser-dots">
+              <span class="dot dot-r"></span>
+              <span class="dot dot-y"></span>
+              <span class="dot dot-g"></span>
+            </div>
+            <div class="browser-url">localhost:5000</div>
+          </div>
+          <div class="browser-body">
+            <img src="assets/app-screenshot.png" alt="Dhyan dashboard showing agent loop, posture guides, fatigue score, and wellness tips" width="1400" height="900" />
+          </div>
+        </div>
+
+        <div class="callout callout-1">
+          <div class="callout-title">01 · Agent Loop Live</div>
+          Sense/Decide/Act/Check phases animate in real time
+        </div>
+        <div class="callout callout-2">
+          <div class="callout-title">02 · Presence Detection</div>
+          Skips analysis when you step away
+        </div>
+        <div class="callout callout-3">
+          <div class="callout-title">03 · Fatigue Intelligence</div>
+          Low/Medium/High with posture score 1–10
+        </div>
+        <div class="callout callout-4">
+          <div class="callout-title">04 · Wellness Tips</div>
+          3 personalized tips from Gemma 4
+        </div>
+      </div>
+
+      <ol class="callout-mobile">
+        <li><div><strong>Agent Loop Live</strong> Sense/Decide/Act/Check phases animate in real time</div></li>
+        <li><div><strong>Presence Detection</strong> Skips analysis when you step away</div></li>
+        <li><div><strong>Fatigue Intelligence</strong> Low/Medium/High with posture score 1–10</div></li>
+        <li><div><strong>Wellness Tips</strong> 3 personalized tips from Gemma 4</div></li>
+      </ol>
+
+      <div class="demo-character">
+        <img
+          src="https://pikaso.cdnpk.net/private/production/5559319724/3645061091.svg?token=exp=1790812800~hmac=788fc598f3e078e386cec176a3470da4f1024f324a29bfaf308194717d3a4189"
+          alt="Professional receiving a Dhyan wellness notification"
+          width="600"
+          height="400"
+        />
+        <p>Dhyan notifies you at the right moment — not too often, never intrusively.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>The agent loop</h2>
+      </div>
+      <div class="loop-diagram">
+        <img
+          src="https://pikaso.cdnpk.net/private/production/5559319084/3645060819.svg?token=exp=1790812800~hmac=ea16c1b1b65ac2b14338ae5922eaedc6d7f7b6d7136f5f4541630495cfbe4740"
+          alt="Sense, Decide, Act, Check circular agent loop"
+          width="500"
+          height="500"
+        />
+      </div>
+      <div class="loop-cards" data-reveal>
+        <article class="loop-card">
+          <div class="icon">👁</div>
+          <h3>Sense</h3>
+          <p>Webcam captures a frame. Brightness and motion are checked first — dark frames and empty desks are skipped automatically. Only when you're present does analysis begin.</p>
+        </article>
+        <article class="loop-card">
+          <div class="icon">⬡</div>
+          <h3>Decide</h3>
+          <p>Gemma 4 e4b running locally on LM Studio analyzes posture, facial tension, and eye fatigue. Your session trend and mobile phone usage are injected as context.</p>
+        </article>
+        <article class="loop-card">
+          <div class="icon">☽</div>
+          <h3>Act</h3>
+          <p>A wellness insight appears in the dashboard. Sound alerts fire based on fatigue level. Chrome notifications appear even when the browser is minimized.</p>
+        </article>
+        <article class="loop-card">
+          <div class="icon">✓</div>
+          <h3>Check</h3>
+          <p>Dhyan waits for your acknowledgment. After 3 consecutive high-fatigue readings, the agent steps back and hands control to you — the human handoff boundary.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Everything you need. Nothing you don't.</h2>
+      </div>
+      <div class="features-grid" data-reveal>
+        <article class="feature-card">
+          <div class="feat-icon">
+            <img
+              src="https://pikaso.cdnpk.net/private/production/5559318977/3645060959.svg?token=exp=1790812800~hmac=86e1be60e9f485cc10aa732018ab309710077f3a644f9f08ce4b7e6c12a1f826"
+              alt=""
+              width="80"
+              height="80"
+            />
+          </div>
+          <h3>Zero cloud</h3>
+          <p>Webcam frames go to localhost only. Gemma 4 runs on your machine. Nothing is logged, stored, or transmitted.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feat-icon">⚡</div>
+          <h3>Battery optimized</h3>
+          <p>Presence detection at 160×120 before full capture at 480×360. Intelligent skipping cuts wasted compute by ~40%.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feat-icon">🔔</div>
+          <h3>OS notifications</h3>
+          <p>Chrome Extension fires native system notifications — visible even when your browser is minimized or behind other windows.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feat-icon">📱</div>
+          <h3>Mobile awareness</h3>
+          <p>Optional phone pickup tracking. Dhyan adds dual-screen fatigue context when you switch between your laptop and phone.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feat-icon">🪑</div>
+          <h3>Posture reference</h3>
+          <p>Three illustrated posture guides (ideal, forward lean, slouch) always visible for real-time self-correction.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feat-icon">🤝</div>
+          <h3>Human handoff</h3>
+          <p>After 3 consecutive high-fatigue readings, Dhyan pauses itself and asks you to take a real break. The agent knows its limits.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRIVACY -->
+  <section class="privacy" id="privacy">
+    <div class="wrap privacy-grid">
+      <div class="privacy-visual">
+        <img
+          src="https://pikaso.cdnpk.net/private/production/5559318977/3645060959.svg?token=exp=1790812800~hmac=86e1be60e9f485cc10aa732018ab309710077f3a644f9f08ce4b7e6c12a1f826"
+          alt="Privacy shield — hexagonal circuit board motif"
+          width="300"
+          height="300"
+        />
+      </div>
+      <div class="privacy-copy">
+        <h2>Your camera. Your data. Your machine.</h2>
+        <p>Most wellness tools send your webcam feed to a remote server for analysis. Dhyan does the opposite: Gemma 4 e4b runs entirely on your device via LM Studio. Your frames never leave localhost.</p>
+        <p>Session data is kept in memory only — nothing written to disk. No account. No telemetry. No analytics. When you close the app, all data is gone.</p>
+        <p>The Chrome Extension talks exclusively to localhost:5000. MIT-licensed and auditable by anyone.</p>
+        <ul class="proof-list">
+          <li>No account required</li>
+          <li>No telemetry or analytics</li>
+          <li>MIT licensed — audit the code</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section id="install">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Up and running in 5 minutes</h2>
+      </div>
+      <div class="install-grid">
+        <div class="install-col">
+          <h3>Web Dashboard</h3>
+          <div class="step">
+            <div class="step-num">01</div>
+            <p>Install LM Studio → load google/gemma-4-e4b → start server on :1234</p>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <p>Clone the repository</p>
+            <div class="code-block">
+              <span class="cmd">git clone</span> https://github.com/yarragudisrinivasreddy/dhyan.git
+              <button class="copy-btn" type="button" data-copy="git clone https://github.com/yarragudisrinivasreddy/dhyan.git">Copy</button>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">03</div>
+            <p>Install dependencies</p>
+            <div class="code-block">
+              <span class="cmd">uv pip install</span> -r requirements.txt
+              <button class="copy-btn" type="button" data-copy="uv pip install -r requirements.txt">Copy</button>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">04</div>
+            <p>Start the app → open localhost:5000</p>
+            <div class="code-block">
+              <span class="cmd">uv run python</span> app.py
+              <button class="copy-btn" type="button" data-copy="uv run python app.py">Copy</button>
+            </div>
+          </div>
+        </div>
+        <div class="install-col">
+          <h3>Chrome Extension</h3>
+          <div class="step">
+            <div class="step-num">01</div>
+            <p>Clone the repo (same as above)</p>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <p>Open chrome://extensions</p>
+            <div class="code-block">
+              chrome://extensions
+              <button class="copy-btn" type="button" data-copy="chrome://extensions">Copy</button>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">03</div>
+            <p>Enable Developer Mode → Load unpacked → select <span class="cmd">extension/</span> folder</p>
+          </div>
+          <div class="step">
+            <div class="step-num">04</div>
+            <p>Pin Dhyan · click ◈ icon · Start Agent</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECH STACK -->
+  <section id="tech">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Built with</h2>
+      </div>
+      <div class="tech-pills">
+        <span class="tech-pill"><span>◆</span> Gemma 4 (Google DeepMind)</span>
+        <span class="tech-pill"><span>◈</span> LM Studio</span>
+        <span class="tech-pill"><span>⬡</span> Flask</span>
+        <span class="tech-pill"><span>🐍</span> Python</span>
+        <span class="tech-pill"><span>🧩</span> Chrome Extensions API</span>
+        <span class="tech-pill"><span>♪</span> Web Audio API</span>
+        <span class="tech-pill"><span>⚖</span> MIT License</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="wrap">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="logo"><span class="logo-mark">◈</span> Dhyan</div>
+          <p>Privacy-first AI wellness agent</p>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/yarragudisrinivasreddy/dhyan" target="_blank" rel="noopener">GitHub</a>
+          <a href="#install">Chrome Extension</a>
+          <a href="https://www.kaggle.com/" target="_blank" rel="noopener">Kaggle</a>
+        </div>
+        <div class="footer-meta">Google DeepMind Hackathon 2026 · MIT</div>
+      </div>
+      <div class="footer-bottom">Powered by Gemma 4 e4b · 100% Local · Open Source</div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var nav = document.getElementById('nav');
+      var hamburger = document.getElementById('hamburger');
+      var mobileMenu = document.getElementById('mobileMenu');
+
+      window.addEventListener('scroll', function () {
+        if (window.scrollY > 50) nav.classList.add('scrolled');
+        else nav.classList.remove('scrolled');
+      }, { passive: true });
+
+      hamburger.addEventListener('click', function () {
+        var open = hamburger.classList.toggle('open');
+        mobileMenu.classList.toggle('open', open);
+        document.body.style.overflow = open ? 'hidden' : '';
+      });
+
+      mobileMenu.querySelectorAll('[data-close]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          hamburger.classList.remove('open');
+          mobileMenu.classList.remove('open');
+          document.body.style.overflow = '';
+        });
+      });
+
+      document.querySelectorAll('.copy-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var text = btn.getAttribute('data-copy');
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+              btn.textContent = 'Copied';
+              btn.classList.add('copied');
+              setTimeout(function () {
+                btn.textContent = 'Copy';
+                btn.classList.remove('copied');
+              }, 1600);
+            });
+          }
+        });
+      });
+
+      if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var cards = entry.target.querySelectorAll('.loop-card, .feature-card');
+            cards.forEach(function (card, i) {
+              setTimeout(function () { card.classList.add('visible'); }, i * 60);
+            });
+            observer.unobserve(entry.target);
+          });
+        }, { threshold: 0.12 });
+
+        document.querySelectorAll('[data-reveal]').forEach(function (el) {
+          observer.observe(el);
+        });
+      } else {
+        document.querySelectorAll('.loop-card, .feature-card').forEach(function (card) {
+          card.classList.add('visible');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
