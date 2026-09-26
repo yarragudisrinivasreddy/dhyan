@@ -214,6 +214,13 @@ async function triggerCheck() {
   }
 }
 
+function fatigueLabel(level) {
+  const key = String(level || 'low').toLowerCase();
+  if (key === 'high') return 'High fatigue';
+  if (key === 'medium' || key === 'med') return 'Mild fatigue';
+  return 'No fatigue';
+}
+
 function showWellnessNotification(analysis) {
   const level = analysis.fatigue_level || 'low';
   const tip = analysis.tips?.[0] || 'Take a short break.';
@@ -223,7 +230,7 @@ function showWellnessNotification(analysis) {
   chrome.notifications.create(`dhyan-${Date.now()}`, {
     type: 'basic',
     iconUrl: 'icons/icon128.png',
-    title: `Dhyan — ${level.charAt(0).toUpperCase() + level.slice(1)} Fatigue · Posture ${analysis.posture_score}/10`,
+    title: `Dhyan — ${fatigueLabel(level)} · Posture ${analysis.posture_score}/10`,
     message: `${urgency}${tip}`,
     contextMessage: breakSuggestion,
     priority: level === 'high' ? 2 : 1,

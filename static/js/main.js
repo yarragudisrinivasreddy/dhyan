@@ -80,6 +80,13 @@ function highlightPostureGuide(category) {
   });
 }
 
+function fatigueLabel(level) {
+  const key = String(level || 'low').toLowerCase();
+  if (key === 'high') return 'High fatigue';
+  if (key === 'medium' || key === 'med') return 'Mild fatigue';
+  return 'No fatigue';
+}
+
 function renderInsight(analysis) {
   insightEmpty.classList.add('hidden');
   insightResult.classList.remove('hidden');
@@ -89,7 +96,7 @@ function renderInsight(analysis) {
   requestAnimationFrame(() => { insightResult.style.animation = ''; });
 
   const level = analysis.fatigue_level || 'low';
-  fatigueChip.textContent = level.charAt(0).toUpperCase() + level.slice(1) + ' Fatigue';
+  fatigueChip.textContent = fatigueLabel(level);
   fatigueChip.className = `fatigue-pill ${level}`;
 
   const score = analysis.posture_score || 5;
@@ -179,7 +186,7 @@ function showWellnessPush(analysis) {
 
   const level = analysis.fatigue_level || 'low';
   const tip = (analysis.tips && analysis.tips[0]) || analysis.break_suggestion || 'Take a short break.';
-  const title = `Dhyan — ${level.charAt(0).toUpperCase() + level.slice(1)} Fatigue · Posture ${analysis.posture_score ?? '—'}/10`;
+  const title = `Dhyan — ${fatigueLabel(level)} · Posture ${analysis.posture_score ?? '—'}/10`;
   try {
     new Notification(title, {
       body: tip,

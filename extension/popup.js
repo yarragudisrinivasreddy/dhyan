@@ -117,12 +117,19 @@ function setAnalyzing(state) {
   btnToggle.disabled = state;
 }
 
+function fatigueLabel(level) {
+  const key = String(level || 'low').toLowerCase();
+  if (key === 'high') return 'High fatigue';
+  if (key === 'medium' || key === 'med') return 'Mild fatigue';
+  return 'No fatigue';
+}
+
 function renderLastResult(analysis) {
   lastResult.classList.add('visible');
 
   const level = analysis.fatigue_level || 'low';
   const chip = document.getElementById('fatigue-chip');
-  chip.textContent = level.charAt(0).toUpperCase() + level.slice(1) + ' Fatigue';
+  chip.textContent = fatigueLabel(level);
   chip.className = `fatigue-chip ${level}`;
 
   document.getElementById('posture-label').textContent = `Posture: ${analysis.posture_score || '?'}/10`;
@@ -130,7 +137,7 @@ function renderLastResult(analysis) {
 
   // Update stat badges
   document.getElementById('stat-posture').textContent = analysis.posture_score || '—';
-  const fatigueLetter = { low: 'LOW', medium: 'MED', high: 'HIGH' };
+  const fatigueLetter = { low: 'OK', medium: 'MILD', high: 'HIGH' };
   document.getElementById('stat-fatigue').textContent = fatigueLetter[level] || '—';
 }
 
