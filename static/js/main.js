@@ -123,15 +123,15 @@ function setStatus(text, analyzing = false) {
 
 function showToast(title, body, type = 'success') {
   const container = document.getElementById('toast-container');
+  if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.setAttribute('role', 'alert');
   toast.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
   container.appendChild(toast);
 
-  if ('Notification' in window && Notification.permission === 'granted') {
-    try { new Notification(title, { body }); } catch (_) { /* ignore */ }
-  }
+  // Never create OS / Chrome push notifications from the dashboard.
+  // Wellness OS alerts come only from the extension for successful checks.
 
   setTimeout(() => {
     toast.style.opacity = '0';
@@ -172,9 +172,6 @@ function syncSettingsFromUI() {
 btnStart.addEventListener('click', async () => {
   const agent = window.DhyanAgent;
   if (!agent.monitoring) {
-    if ('Notification' in window && Notification.permission === 'default') {
-      await Notification.requestPermission();
-    }
     const ok = await startCamera();
     if (!ok) return;
     syncSettingsFromUI();
@@ -278,7 +275,3 @@ btnMobilePickup?.addEventListener('click', async () => {
 window.renderInsight = renderInsight;
 window.updateStats = updateStats;
 window.showToast = showToast;
-
-if ('Notification' in window && Notification.permission === 'default') {
-  Notification.requestPermission();
-}

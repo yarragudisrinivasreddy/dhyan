@@ -177,8 +177,26 @@ async function triggerCheck() {
       body: JSON.stringify({ image: imageB64 })
     });
 
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Analyze failed');
+    let data = null;
+    try {
+      data = await res.json();
+    } catch (_) {
+      // Bad/empty JSON from Gemma parse failures — never OS-notify
+      console.error('[Dhyan] Analysis returned non-JSON:', res.status);
+      return null;
+    }
+
+    if (!data.success || !data.analysis) {
+      // Offline / parse / model errors — log only, no push notification
+      console.error('[Dhyan] Analysis failed:', data.error || res.status);
+      return null;
+    }
+
+    // Cached offline recovery is not a fresh wellness insight — skip OS notify
+    if (data.offline_recovery) {
+      console.warn('[Dhyan] Offline recovery — skipping notification:', data.error);
+      return data.analysis;
+    }
 
     const analysis = data.analysis;
     const stored = await chrome.storage.local.get(['totalChecks']);
@@ -191,10 +209,7 @@ async function triggerCheck() {
     return analysis;
   } catch (err) {
     console.error('[Dhyan] Analysis failed:', err);
-    showNotification(
-      'error',
-      'Could not reach Dhyan server. Is Flask running on localhost:5000?'
-    );
+    // No OS notification for analysis/server/parse errors
     return null;
   }
 }

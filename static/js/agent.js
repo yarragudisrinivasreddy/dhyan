@@ -143,14 +143,8 @@ class DhyanAgent {
       }
       if (data.offline_recovery) {
         this.setPhase('offline_recovery');
-        if (typeof showToast === 'function') {
-          const reason = data.error || 'Model busy or timed out';
-          showToast(
-            'Using last insight',
-            reason.length > 120 ? reason.slice(0, 120) + '…' : reason,
-            'warning'
-          );
-        }
+        // In-dashboard only — never OS push for parse/model failures
+        console.warn('[Dhyan] Offline recovery:', data.error || 'model unavailable');
       }
       analysis = data.analysis;
       if (!analysis) {
