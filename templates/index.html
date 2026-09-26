@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dhyan — Local AI Wellness Agent</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,300;9..144,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<div class="privacy-bar" role="status">
+  <span class="pulse-dot"></span>
+  100% Local · Gemma 4 on-device · Zero data leaves this machine
+  <span class="agent-phase-badge" id="agent-phase-badge">IDLE</span>
+</div>
+
+<main class="app-shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">◈</div>
+      <div class="brand-name">Dhyan</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-checks">0</div><div class="stat-lbl">Checks</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-posture">—</div><div class="stat-lbl">Posture</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-skipped">0</div><div class="stat-lbl">Skipped</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-session">0m</div><div class="stat-lbl">Session</div></div>
+    </div>
+
+    <div class="trend-section">
+      <div class="section-label">Fatigue Trend</div>
+      <div class="trend-bars">
+        <div class="tbar low" id="tbar-low" style="height:0%"></div>
+        <div class="tbar med" id="tbar-med" style="height:0%"></div>
+        <div class="tbar high" id="tbar-high" style="height:0%"></div>
+      </div>
+      <div class="trend-labels"><span>Low</span><span>Med</span><span>High</span></div>
+    </div>
+
+    <div class="agent-loop-card">
+      <div class="section-label">Agent Loop</div>
+      <div class="loop-steps">
+        <div class="loop-step" id="loop-sense">◉ Sense</div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-step" id="loop-decide">◉ Decide</div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-step" id="loop-act">◉ Act</div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-step" id="loop-check">◉ Check</div>
+      </div>
+    </div>
+
+    <div class="mobile-card hidden" id="mobile-card">
+      <div class="section-label">Mobile Awareness</div>
+      <div class="mobile-pickups" id="mobile-pickups">0 pickups today</div>
+      <div class="mobile-hint">Tap when you pick up your phone</div>
+      <button class="btn-mobile-pickup" id="btn-mobile-pickup">Picked up phone</button>
+    </div>
+
+    <button class="btn-settings" id="btn-settings" aria-label="Open settings">Settings</button>
+    <button class="btn-clear" id="btn-clear">Clear Session</button>
+  </aside>
+
+  <section class="camera-section">
+    <div class="camera-frame" id="camera-frame">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="canvas" style="display:none"></canvas>
+
+      <div class="scan-overlay" id="scan-overlay">
+        <div class="scan-line"></div>
+        <div class="scan-corners">
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+        </div>
+      </div>
+
+      <div class="presence-badge" id="presence-badge">Awaiting presence...</div>
+      <div class="status-badge" id="status-badge">Idle</div>
+    </div>
+
+    <div class="controls-row">
+      <button class="btn-primary" id="btn-start">Start Agent</button>
+      <button class="btn-secondary" id="btn-check" disabled>Check Now</button>
+      <div class="interval-group">
+        <label for="interval">Every</label>
+        <select id="interval">
+          <option value="30000">30s (demo)</option>
+          <option value="300000">5 min</option>
+          <option value="600000" selected>10 min</option>
+          <option value="900000">15 min</option>
+          <option value="1800000">30 min</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="next-check" id="next-check"></div>
+
+    <div class="posture-reference">
+      <div class="section-label">Posture Reference</div>
+      <div class="posture-guides" id="posture-guides">
+        <div class="posture-guide good">
+          <img src="/static/images/postures/ideal.svg" alt="Ideal posture" width="64" height="64" />
+          <div class="posture-label">Ideal</div>
+        </div>
+        <div class="posture-guide warn">
+          <img src="/static/images/postures/forward.svg" alt="Forward lean" width="64" height="64" />
+          <div class="posture-label">Forward lean</div>
+        </div>
+        <div class="posture-guide bad">
+          <img src="/static/images/postures/slouch.svg" alt="Slouch" width="64" height="64" />
+          <div class="posture-label">Slouch</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="insight-section" aria-live="polite">
+
+    <div class="insight-empty" id="insight-empty">
+      <div class="empty-orb">◈</div>
+      <p>Dhyan is ready.</p>
+      <p class="empty-sub">Start the agent to receive your first wellness insight.<br>Gemma 4 runs entirely on your device.</p>
+    </div>
+
+    <div class="insight-result hidden" id="insight-result">
+      <div class="result-header">
+        <div class="fatigue-chip" id="fatigue-chip"></div>
+        <div class="posture-ring">
+          <svg viewBox="0 0 60 60">
+            <circle class="ring-bg" cx="30" cy="30" r="24"/>
+            <circle class="ring-fill" id="ring-fill" cx="30" cy="30" r="24"
+              stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+          </svg>
+          <span id="posture-val">—</span>
+        </div>
+        <div class="urgency-badge" id="urgency-badge"></div>
+      </div>
+
+      <div class="observations-card" id="observations-card"></div>
+
+      <div class="tips-section">
+        <div class="section-label">Wellness Tips</div>
+        <ul class="tips-list" id="tips-list"></ul>
+      </div>
+
+      <div class="break-card" id="break-card">
+        <span class="break-icon">☽</span>
+        <div>
+          <div class="break-label">Break Suggestion</div>
+          <div class="break-text" id="break-text"></div>
+        </div>
+      </div>
+
+      <div class="affirmation" id="affirmation"></div>
+
+      <button class="btn-acknowledge hidden" id="btn-acknowledge">
+        Got it — I'll take a break
+      </button>
+    </div>
+
+    <div class="handoff-card hidden" id="handoff-card">
+      <div class="handoff-icon">!</div>
+      <div class="handoff-title">Agent stepping back</div>
+      <div class="handoff-body">
+        High fatigue detected 3 times in a row. Dhyan is pausing
+        automated checks. Please take a real break — at least 15 minutes away
+        from your screen.
+      </div>
+      <button class="btn-resume" id="btn-resume">I've taken a break — Resume Agent</button>
+    </div>
+  </section>
+</main>
+
+<div class="settings-drawer hidden" id="settings-drawer">
+  <div class="settings-header">
+    <span>Settings</span>
+    <button class="btn-close-settings" id="btn-close-settings">✕</button>
+  </div>
+  <div class="settings-body">
+    <div class="setting-row">
+      <label>Sound notifications</label>
+      <input type="checkbox" id="sound-enabled" checked>
+    </div>
+    <div class="setting-row">
+      <label>Volume</label>
+      <input type="range" id="sound-volume" min="0" max="1" step="0.1" value="0.6">
+    </div>
+    <div class="setting-row">
+      <label>Speak tips aloud (high fatigue)</label>
+      <input type="checkbox" id="speak-tips">
+    </div>
+    <div class="setting-row">
+      <label>Mobile awareness mode</label>
+      <input type="checkbox" id="mobile-mode">
+    </div>
+    <div class="setting-row">
+      <label>Performance mode (lower CPU)</label>
+      <input type="checkbox" id="perf-mode">
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container" aria-live="assertive"></div>
+
+<script src="/static/js/sounds.js"></script>
+<script src="/static/js/presence.js"></script>
+<script src="/static/js/agent.js"></script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
