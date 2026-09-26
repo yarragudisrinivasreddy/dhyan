@@ -75,9 +75,24 @@ def _normalize_analysis(result: dict) -> dict:
     if isinstance(observations, str):
         observations = [observations]
 
+    raw_cat = str(result.get("posture_category") or result.get("posture_class") or "").lower()
+    if "ideal" in raw_cat or "good" in raw_cat or "upright" in raw_cat:
+        posture_category = "ideal"
+    elif "forward" in raw_cat or "lean" in raw_cat:
+        posture_category = "forward"
+    elif "slouch" in raw_cat or "hunch" in raw_cat or "round" in raw_cat:
+        posture_category = "slouch"
+    elif score >= 8:
+        posture_category = "ideal"
+    elif score >= 5:
+        posture_category = "forward"
+    else:
+        posture_category = "slouch"
+
     return {
         "fatigue_level": level,
         "posture_score": score,
+        "posture_category": posture_category,
         "observations": list(observations)[:5],
         "tips": list(tips)[:5] or ["Take a short screen break.", "Stretch your neck.", "Hydrate."],
         "break_suggestion": str(result.get("break_suggestion") or "Stand and stretch for 5 minutes."),
@@ -119,6 +134,12 @@ posture_score (integer 1–10) — use the FULL range; avoid 7 unless truly just
 - 6–7: mild lean or mild hunch
 - 8–10: upright, neutral neck, open chest
 
+posture_category (pick ONE that matches what you see):
+- "ideal" — upright, back supported, head stacked over shoulders
+- "forward" — leaning toward the screen / forward head posture
+- "slouch" — rounded upper back, collapsed chest, slumped in chair
+If score ≥ 8 → ideal; 5–7 → usually forward; ≤ 4 → usually slouch (unless clearly upright).
+
 urgency:
 - "urgent" when fatigue_level is high
 - "elevated" when medium
@@ -135,6 +156,7 @@ Return ONLY valid JSON, no markdown, no preamble:
 {{
   "fatigue_level": "low|medium|high",
   "posture_score": 1-10,
+  "posture_category": "ideal|forward|slouch",
   "observations": ["observation 1", "observation 2"],
   "tips": ["specific tip 1", "specific tip 2", "specific tip 3"],
   "break_suggestion": "specific 5-min activity",

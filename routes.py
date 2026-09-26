@@ -200,6 +200,7 @@ def register_routes(app: Flask) -> None:
         analysis = {
             "fatigue_level": "high",
             "posture_score": 2,
+            "posture_category": "slouch",
             "observations": [
                 "Eyes closed or heavy lids — acute fatigue signals.",
                 "Head / shoulder collapse consistent with nodding off.",

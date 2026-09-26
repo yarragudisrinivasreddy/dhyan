@@ -351,6 +351,29 @@ html, body {
 .posture-item.good { border-color: rgba(62,207,110,.25); }
 .posture-item.warn { border-color: rgba(245,158,11,.25); }
 .posture-item.bad  { border-color: rgba(239,68,68,.25); }
+.posture-item.active {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px currentColor, 0 8px 24px rgba(0,0,0,0.35);
+}
+.posture-item.good.active {
+  border-color: var(--low);
+  background: rgba(62,207,110,0.12);
+  color: var(--low);
+  box-shadow: 0 0 0 1px var(--low), 0 0 20px rgba(62,207,110,0.25);
+}
+.posture-item.warn.active {
+  border-color: var(--medium);
+  background: rgba(245,158,11,0.12);
+  color: var(--medium);
+  box-shadow: 0 0 0 1px var(--medium), 0 0 20px rgba(245,158,11,0.25);
+}
+.posture-item.bad.active {
+  border-color: var(--high);
+  background: rgba(239,68,68,0.12);
+  color: var(--high);
+  box-shadow: 0 0 0 1px var(--high), 0 0 20px rgba(239,68,68,0.25);
+}
+.posture-item.active .posture-name { font-weight: 600; }
 .posture-name {
   font-family: var(--font-data); font-size: 9px;
   color: var(--text-muted); text-align: center;

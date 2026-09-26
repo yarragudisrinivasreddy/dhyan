@@ -121,15 +121,15 @@
       <div class="posture-card">
         <div class="posture-label">Posture Guide</div>
         <div class="posture-row" role="list" aria-label="Posture reference images">
-          <div class="posture-item good" role="listitem" tabindex="0" aria-label="Ideal posture: back straight, monitor at eye level">
+          <div class="posture-item good" data-posture="ideal" role="listitem" tabindex="0" aria-label="Ideal posture: back straight, monitor at eye level">
             <img src="/static/images/postures/ideal.png?v=4" alt="Person sitting with ideal posture" width="72" height="72" />
             <div class="posture-name">Ideal</div>
           </div>
-          <div class="posture-item warn" role="listitem" tabindex="0" aria-label="Forward lean: monitor too far, leaning in">
+          <div class="posture-item warn" data-posture="forward" role="listitem" tabindex="0" aria-label="Forward lean: monitor too far, leaning in">
             <img src="/static/images/postures/forward.png?v=4" alt="Person leaning forward toward monitor" width="72" height="72" />
             <div class="posture-name">Forward lean</div>
           </div>
-          <div class="posture-item bad" role="listitem" tabindex="0" aria-label="Slouch: rounded shoulders, neck bent">
+          <div class="posture-item bad" data-posture="slouch" role="listitem" tabindex="0" aria-label="Slouch: rounded shoulders, neck bent">
             <img src="/static/images/postures/slouch.png?v=4" alt="Person slouching at desk" width="72" height="72" />
             <div class="posture-name">Slouch</div>
           </div>
@@ -305,9 +305,9 @@
   <!-- Toast notifications -->
   <div class="toast-container" id="toast-container" aria-live="assertive" aria-atomic="true" role="status"></div>
 
-  <script src="/static/js/sounds.js?v=20260326e"></script>
-  <script src="/static/js/presence.js?v=20260326e"></script>
-  <script src="/static/js/agent.js?v=20260326e"></script>
-  <script src="/static/js/main.js?v=20260326e"></script>
+  <script src="/static/js/sounds.js?v=20260326f"></script>
+  <script src="/static/js/presence.js?v=20260326f"></script>
+  <script src="/static/js/agent.js?v=20260326f"></script>
+  <script src="/static/js/main.js?v=20260326f"></script>
 </body>
 </html>

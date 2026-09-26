@@ -59,6 +59,27 @@ function stopCamera() {
   }
 }
 
+function postureCategoryFromAnalysis(analysis) {
+  const raw = String(analysis.posture_category || analysis.posture_class || '').toLowerCase();
+  if (raw.includes('ideal') || raw.includes('good') || raw === 'upright') return 'ideal';
+  if (raw.includes('forward') || raw.includes('lean')) return 'forward';
+  if (raw.includes('slouch') || raw.includes('hunch') || raw.includes('round')) return 'slouch';
+
+  const score = Number(analysis.posture_score);
+  if (!Number.isFinite(score)) return null;
+  if (score >= 8) return 'ideal';
+  if (score >= 5) return 'forward';
+  return 'slouch';
+}
+
+function highlightPostureGuide(category) {
+  document.querySelectorAll('.posture-item[data-posture]').forEach((el) => {
+    const match = category && el.dataset.posture === category;
+    el.classList.toggle('active', !!match);
+    el.setAttribute('aria-current', match ? 'true' : 'false');
+  });
+}
+
 function renderInsight(analysis) {
   insightEmpty.classList.add('hidden');
   insightResult.classList.remove('hidden');
@@ -75,6 +96,8 @@ function renderInsight(analysis) {
   const circ = 138.2;
   ringFill.style.strokeDashoffset = circ - (score / 10) * circ;
   postureVal.textContent = score;
+
+  highlightPostureGuide(postureCategoryFromAnalysis(analysis));
 
   const obs = analysis.observations || [];
   observationsCard.innerHTML = obs.map(o => `<div>${o}</div>`).join('');
@@ -247,6 +270,7 @@ btnClear.addEventListener('click', async () => {
   insightEmpty.classList.remove('hidden');
   insightResult.classList.add('hidden');
   document.getElementById('handoff-card')?.classList.add('hidden');
+  highlightPostureGuide(null);
   showToast('Session Cleared', 'All local data has been reset.', 'success');
 });
 
